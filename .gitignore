@@ -1,0 +1,145 @@
+# Xcode
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+/*.xcuserdata
+/*.xcuserdatad
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Build
+build/
+Build/
+.build/
+*.build/
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# CocoaPods
+Pods/
+*.xcworkspace
+!default.xcworkspace
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+
+# Accio
+Dependencies/
+.accio/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+iOSInjectionProject/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Thumbnails
+*.Trashes
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# IDE
+*.swp
+*.swo
+*~
+
+# Cursor
+.cursor/
+.cursorrules
+
+# VSCode (保留推荐配置)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# JetBrains
+.idea/
+*.iml
+
+# OpenCode / Sisyphus
+.sisyphus/plans/*.md.bak
+.sisyphus/cache/
+.sisyphus/logs/
+
+# Secrets
+*.env
+.env.*
+*.pem
+*.p12
+secrets/
+credentials/
+
+# Logs
+*.log
+logs/
+
+# Debug
+*.xcscmblueprint
+
+# Archives
+*.zip
+*.tar.gz
+*.tar
+
+# Temporary
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
+
+# Documentation generated
+docs/_build/
+docs/.doctrees/
+
+# Test outputs
+*.gcov
+*.gcda
+*.gcno
+
+# AI / LLM generated
+*.ai.md
+.ai/
+.aider*
+.claude/
+
+# Development notes (personal)
+NOTES.md
+TODO.md
+scratch/
