@@ -38,7 +38,7 @@ final class MenuBarController {
 
         if let button = statusItem?.button {
             let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-            if let image = NSImage(systemSymbolName: "globe", accessibilityDescription: "TypeBack") {
+            if let image = NSImage(systemSymbolName: "character.cursor.ibeam", accessibilityDescription: "TypeBack") {
                 button.image = image.withSymbolConfiguration(config)
                 button.image?.isTemplate = true
             }

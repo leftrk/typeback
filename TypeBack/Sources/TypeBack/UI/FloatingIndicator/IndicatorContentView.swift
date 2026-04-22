@@ -2,8 +2,7 @@ import SwiftUI
 
 /// 浮动指示器 — macOS 原生材质风格
 ///
-/// 磨砂玻璃背景自动适配亮/暗模式，系统语义色保证可访问性。
-/// 保留琥珀色倒计时弧作为品牌识别色。
+/// 磨砂玻璃背景自动适配亮/暗模式，纯系统语义色，接近单色系。
 struct ProgressRingIndicator: View {
     let appState: AppState
     let onTap: () -> Void
@@ -14,6 +13,7 @@ struct ProgressRingIndicator: View {
 
     private let diameter: CGFloat = 38
     private let ringWidth: CGFloat = 1.8
+    private let arcColor = Color.primary.opacity(0.35)
 
     var body: some View {
         ZStack {
@@ -63,7 +63,6 @@ struct ProgressRingIndicator: View {
                 .frame(width: diameter - 4, height: diameter - 4)
                 .rotationEffect(.degrees(-90))
                 .animation(.easeOut(duration: 0.6), value: progress)
-                .animation(.easeInOut(duration: 0.4), value: arcColor)
                 .opacity(pulse ? 0.55 : 1.0)
                 .animation(.easeInOut(duration: 0.9), value: pulse)
         }
@@ -100,29 +99,13 @@ struct ProgressRingIndicator: View {
         return max(0, min(1, Double(appState.countdownSeconds) / Double(total)))
     }
 
-    /// 系统语义色适配亮/暗模式
     private var glyphColor: Color {
         switch appState.currentInputState {
         case .english:
             return .secondary
-        case .chineseIdle, .chineseTyping:
+        case .chineseIdle, .chineseTyping, .chineseCountdown:
             return .primary
-        case .chineseCountdown:
-            return arcColor
         }
-    }
-
-    /// 系统蓝色渐变：时间充裕=亮蓝，时间紧迫=深蓝
-    private var arcColor: Color {
-        let urgency = 1.0 - progress
-        let r = lerp(0.25, 0.15, urgency)
-        let g = lerp(0.60, 0.35, urgency)
-        let b = lerp(1.0, 0.75, urgency)
-        return Color(red: r, green: g, blue: b)
-    }
-
-    private func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double {
-        a + (b - a) * t
     }
 
     // MARK: - 末段脉冲

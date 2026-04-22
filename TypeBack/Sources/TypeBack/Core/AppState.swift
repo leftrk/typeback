@@ -14,9 +14,16 @@ final class AppState {
         didSet { updateLaunchAtLogin() }
     }
 
+    var disableCapsLock: Bool = false {
+        didSet { updateCapsLockGuard() }
+    }
+
+    private var capsLockGuard: CapsLockGuard?
+
     private let userDefaults = UserDefaults.standard
     private let timeoutKey = "timeoutSeconds"
     private let launchAtLoginKey = "launchAtLogin"
+    private let disableCapsLockKey = "disableCapsLock"
     private let positionKey = "indicatorPosition"
 
     // MARK: - 计算属性
@@ -69,11 +76,26 @@ final class AppState {
         let saved = userDefaults.integer(forKey: timeoutKey)
         timeoutSeconds = saved > 0 ? saved : 60
         launchAtLogin = userDefaults.bool(forKey: launchAtLoginKey)
+        disableCapsLock = userDefaults.bool(forKey: disableCapsLockKey)
     }
 
     func saveTimeout(_ seconds: Int) {
         timeoutSeconds = seconds
         userDefaults.set(seconds, forKey: timeoutKey)
+    }
+
+    private func updateCapsLockGuard() {
+        userDefaults.set(disableCapsLock, forKey: disableCapsLockKey)
+        if disableCapsLock {
+            if capsLockGuard == nil {
+                capsLockGuard = CapsLockGuard()
+            }
+            let started = capsLockGuard?.start() ?? false
+            logInfo("Caps Lock 防误触 \(started ? "已启动" : "启动失败")")
+        } else {
+            capsLockGuard?.stop()
+            capsLockGuard = nil
+        }
     }
 
     private func updateLaunchAtLogin() {

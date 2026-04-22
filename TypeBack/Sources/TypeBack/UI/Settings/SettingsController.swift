@@ -20,15 +20,18 @@ final class SettingsController {
         }
 
         let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 240),
+            contentRect: .zero,
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
         w.title = "TypeBack 设置"
         w.isReleasedWhenClosed = false
+
+        let hostingView = NSHostingView(rootView: SettingsView(appState: appState))
+        w.contentView = hostingView
+        w.setContentSize(hostingView.fittingSize)
         w.center()
-        w.contentView = NSHostingView(rootView: SettingsView(appState: appState))
 
         closeObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
