@@ -1,0 +1,14 @@
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/App/AppDelegate.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/App/TypeBackApp.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/Core/AppState.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/Core/CandidateBoxDetector.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/Core/KeyEventMonitor.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/Core/SharedTypes.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/Core/TypingStateDetector.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/UI/FloatingIndicator/FloatingIndicatorController.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/UI/FloatingIndicator/IndicatorContentView.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/UI/MenuBar/MenuBarController.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/UI/Settings/SettingsController.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/UI/Settings/SettingsView.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/Utils/InputSourceHelper.swift
+/Users/guanhua/game/type-back/TypeBack/Sources/TypeBack/Utils/PermissionsHelper.swift
