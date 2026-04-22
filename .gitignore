@@ -28,3 +28,6 @@ Package.resolved
 .DS_Store
 .AppleDouble
 .LSOverride
+build/
+dist/
+*.xcarchive

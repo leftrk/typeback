@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-release:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build archive
+        run: |
+          xcodebuild \
+            -project TypeBack.xcodeproj \
+            -scheme TypeBack \
+            -configuration Release \
+            -archivePath build/TypeBack.xcarchive \
+            archive \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO
+
+      - name: Package zip
+        run: |
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/TypeBack.xcarchive/Products/Applications/TypeBack.app \
+            dist/TypeBack.zip
+
+      - name: Compute sha256
+        id: sha
+        run: |
+          SHA=$(shasum -a 256 dist/TypeBack.zip | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/TypeBack.zip
+          generate_release_notes: true
+
+      - name: Update homebrew-tap Cask
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA="${{ steps.sha.outputs.sha256 }}"
+          DOWNLOAD_URL="https://github.com/leftrk/typeback/releases/download/${GITHUB_REF_NAME}/TypeBack.zip"
+
+          git clone https://x-access-token:${GH_TOKEN}@github.com/leftrk/homebrew-tap.git /tmp/homebrew-tap
+          cd /tmp/homebrew-tap
+
+          cat > Casks/typeback.rb << EOF
+          cask "typeback" do
+            version "${VERSION}"
+            sha256 "${SHA}"
+
+            url "${DOWNLOAD_URL}"
+            name "TypeBack"
+            desc "Automatically switches input method back to English after pressing Enter/Escape"
+            homepage "https://github.com/leftrk/typeback"
+
+            app "TypeBack.app"
+
+            postflight do
+              system_command "/usr/bin/osascript",
+                             args: ["-e", 'tell application "System Events" to set enabled of (first process whose bundle identifier is "com.leftrk.typeback") to true'],
+                             sudo: false
+            end
+
+            zap trash: [
+              "~/Library/Application Support/TypeBack",
+              "~/Library/Preferences/com.leftrk.typeback.plist",
+              "~/Library/Logs/TypeBack",
+            ]
+          end
+          EOF
+
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add Casks/typeback.rb
+          git commit -m "chore: update typeback cask to ${GITHUB_REF_NAME}"
+          git push

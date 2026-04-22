@@ -1,0 +1,50 @@
+name: TypeBack
+options:
+  bundleIdPrefix: com.leftrk
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    PRODUCT_NAME: TypeBack
+    SWIFT_VERSION: "5.10"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_IDENTITY: "-"
+
+targets:
+  TypeBack:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/TypeBack
+    info:
+      path: Sources/TypeBack/Info.plist
+      properties:
+        CFBundleName: TypeBack
+        CFBundleDisplayName: TypeBack
+        CFBundleIdentifier: com.leftrk.typeback
+        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleExecutable: TypeBack
+        CFBundlePackageType: APPL
+        LSMinimumSystemVersion: "14.0"
+        LSUIElement: true
+        NSPrincipalClass: NSApplication
+        NSHighResolutionCapable: true
+        NSSupportsAutomaticTermination: false
+        NSAccessibilityUsageDescription: "TypeBack 需要辅助功能权限来监听键盘事件，实现自动切换输入法功能。"
+    entitlements:
+      path: Sources/TypeBack/TypeBack.entitlements
+      properties:
+        com.apple.security.automation.apple-events: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.leftrk.typeback
+        INFOPLIST_FILE: Sources/TypeBack/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/TypeBack/TypeBack.entitlements
