@@ -7,7 +7,7 @@ final class FloatingIndicatorController {
     private var window: NSPanel?
     private var hostingView: NSHostingView<IndicatorView>?
 
-    private let windowSize = CGSize(width: 46, height: 46)
+    private let windowSize = CGSize(width: 52, height: 52)
     private let appState: AppState
     private var savedPosition: CGPoint?
     private var observationTask: Task<Void, Never>?
@@ -93,9 +93,12 @@ final class FloatingIndicatorController {
             onDoubleTap: { NotificationCenter.default.post(name: .openSettings, object: nil) }
         )
 
-        hostingView = NSHostingView(rootView: contentView)
-        hostingView?.frame = NSRect(origin: .zero, size: windowSize)
-        panel.contentView = hostingView
+        let hosting = NSHostingView(rootView: contentView)
+        hosting.frame = NSRect(origin: .zero, size: windowSize)
+        hosting.wantsLayer = true
+        hosting.layer?.backgroundColor = .clear
+        hostingView = hosting
+        panel.contentView = hosting
 
         window = panel
 

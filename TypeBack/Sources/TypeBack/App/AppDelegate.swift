@@ -140,7 +140,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func handleEsc() {
         guard appState.isChinese else { return }
-        guard candidateBoxDetector?.hasCandidateBox != true else { return }
         switchToEnglish()
     }
 

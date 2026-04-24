@@ -100,21 +100,27 @@ final class KeyEventMonitor: @unchecked Sendable {
         type: CGEventType,
         event: CGEvent
     ) -> Unmanaged<CGEvent> {
-        DispatchQueue.main.async { [weak self] in
-            self?.processKeyEvent(event)
+        // 系统会在 tap 响应慢时自动禁用，必须重新启用
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = eventTap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return Unmanaged.passUnretained(event)
         }
-        // 事件始终穿透给前台应用
-        return Unmanaged.passUnretained(event)
-    }
 
-    private func processKeyEvent(_ event: CGEvent) {
+        // 同步读取 keyCode（回调返回后 CGEvent 可能被系统回收）
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+        let isEsc = keyCode == Int64(kVK_Escape)
 
-        if keyCode == Int64(kVK_Escape) {
-            onEsc()
-        } else {
-            onKeyEvent()
+        DispatchQueue.main.async { [weak self] in
+            if isEsc {
+                self?.onEsc()
+            } else {
+                self?.onKeyEvent()
+            }
         }
+
+        return Unmanaged.passUnretained(event)
     }
 }
 

@@ -1,8 +1,6 @@
 import SwiftUI
 
-/// 浮动指示器 — macOS 原生材质风格
-///
-/// 磨砂玻璃背景自动适配亮/暗模式，纯系统语义色，接近单色系。
+/// 浮动指示器 — 白底黑字 / 黑底白字
 struct ProgressRingIndicator: View {
     let appState: AppState
     let onTap: () -> Void
@@ -11,19 +9,20 @@ struct ProgressRingIndicator: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
 
-    private let diameter: CGFloat = 38
-    private let ringWidth: CGFloat = 1.8
-    private let arcColor = Color.primary.opacity(0.35)
+    private let diameter: CGFloat = 36
+    private let ringWidth: CGFloat = 1.6
+
+    private var isChinese: Bool { appState.currentInputState != .english }
 
     var body: some View {
         ZStack {
             dial
-            trackRing
             progressArc
             glyph
         }
-        .frame(width: 46, height: 46)
-        .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
+        .frame(width: 52, height: 52)
+        .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 2)
+        .animation(.easeInOut(duration: 0.3), value: isChinese)
         .onAppear { startPulseIfNeeded() }
         .onChange(of: appState.currentInputState) { _, _ in startPulseIfNeeded() }
         .onChange(of: appState.countdownSeconds) { old, new in
@@ -33,23 +32,19 @@ struct ProgressRingIndicator: View {
         .onTapGesture { onTap() }
     }
 
-    // MARK: - 表盘（磨砂玻璃材质）
+    // MARK: - 表盘
 
     private var dial: some View {
         Circle()
-            .fill(.regularMaterial)
+            .fill(isChinese
+                ? Color(white: 0.12).opacity(0.9)
+                : Color(white: 0.97).opacity(0.9)
+            )
             .frame(width: diameter, height: diameter)
+            .animation(.easeInOut(duration: 0.3), value: isChinese)
     }
 
-    // MARK: - 环轨
-
-    private var trackRing: some View {
-        Circle()
-            .stroke(Color.primary.opacity(0.08), lineWidth: ringWidth)
-            .frame(width: diameter - 4, height: diameter - 4)
-    }
-
-    // MARK: - 进度弧（仅倒计时中显示）
+    // MARK: - 进度弧
 
     @ViewBuilder
     private var progressArc: some View {
@@ -57,13 +52,13 @@ struct ProgressRingIndicator: View {
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(
-                    arcColor,
+                    Color.white.opacity(0.75),
                     style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
                 )
-                .frame(width: diameter - 4, height: diameter - 4)
+                .frame(width: diameter - 3, height: diameter - 3)
                 .rotationEffect(.degrees(-90))
                 .animation(.easeOut(duration: 0.6), value: progress)
-                .opacity(pulse ? 0.55 : 1.0)
+                .opacity(pulse ? 0.5 : 1.0)
                 .animation(.easeInOut(duration: 0.9), value: pulse)
         }
     }
@@ -77,11 +72,15 @@ struct ProgressRingIndicator: View {
 
     private var glyph: some View {
         Text(stateText)
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .tracking(0.5)
-            .foregroundStyle(glyphColor)
+            .font(.system(size: 11, weight: .medium, design: .rounded))
+            .tracking(0.3)
+            .foregroundStyle(isChinese
+                ? Color.white.opacity(0.8)
+                : Color.black.opacity(0.45)
+            )
             .contentTransition(.opacity)
-            .animation(.easeInOut(duration: 0.2), value: stateText)
+            .animation(.easeInOut(duration: 0.25), value: stateText)
+            .animation(.easeInOut(duration: 0.3), value: isChinese)
     }
 
     // MARK: - 计算
@@ -97,15 +96,6 @@ struct ProgressRingIndicator: View {
         guard case .chineseCountdown = appState.currentInputState else { return 1.0 }
         let total = max(1, appState.timeoutSeconds)
         return max(0, min(1, Double(appState.countdownSeconds) / Double(total)))
-    }
-
-    private var glyphColor: Color {
-        switch appState.currentInputState {
-        case .english:
-            return .secondary
-        case .chineseIdle, .chineseTyping, .chineseCountdown:
-            return .primary
-        }
     }
 
     // MARK: - 末段脉冲

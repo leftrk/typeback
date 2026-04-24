@@ -118,7 +118,7 @@ final class CandidateBoxDetector: @unchecked Sendable {
     }
 
     private func isCandidateWindow(_ name: String) -> Bool {
-        if name.isEmpty { return true }
+        guard !name.isEmpty else { return false }
 
         let candidateKeywords = ["候选", "Candidate", "Input", "Composition"]
         return candidateKeywords.contains { name.contains($0) }
