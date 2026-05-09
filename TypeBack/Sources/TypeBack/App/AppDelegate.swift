@@ -73,6 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         )
+        keyEventMonitor?.hotKeyMode = appState.hotKeyMode
         let keyMonitorStarted = keyEventMonitor?.start() ?? false
         logInfo("键盘监听 \(keyMonitorStarted ? "已启动" : "启动失败")")
 
@@ -91,6 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         inputCheckTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkCurrentInputSource()
+                self?.keyEventMonitor?.hotKeyMode = self?.appState.hotKeyMode ?? .doubleEsc
             }
         }
     }

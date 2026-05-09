@@ -14,6 +14,12 @@ final class KeyEventMonitor: @unchecked Sendable {
     private let onKeyEvent: @Sendable () -> Void
     private let onEsc: @Sendable () -> Void
 
+    // CGEventTap 回调运行在主线程，与 @MainActor 同线程，读写安全
+    nonisolated(unsafe) var hotKeyMode: HotKeyMode = .doubleEsc
+
+    private var lastEscTime: Date?
+    private let doubleEscInterval: TimeInterval = 0.3
+
     init(
         onKeyEvent: @escaping @Sendable () -> Void,
         onEsc: @escaping @Sendable () -> Void
@@ -59,7 +65,7 @@ final class KeyEventMonitor: @unchecked Sendable {
     }
 
     private func createEventTap() -> Bool {
-        let callback: CGEventTapCallBack = { (proxy, type, event, refcon) in
+        let callback: CGEventTapCallBack = { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
             guard let refcon = refcon else {
                 return Unmanaged.passUnretained(event)
             }
@@ -99,7 +105,7 @@ final class KeyEventMonitor: @unchecked Sendable {
         proxy: CGEventTapProxy,
         type: CGEventType,
         event: CGEvent
-    ) -> Unmanaged<CGEvent> {
+    ) -> Unmanaged<CGEvent>? {
         // 系统会在 tap 响应慢时自动禁用，必须重新启用
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if let tap = eventTap {
@@ -108,19 +114,34 @@ final class KeyEventMonitor: @unchecked Sendable {
             return Unmanaged.passUnretained(event)
         }
 
-        // 同步读取 keyCode（回调返回后 CGEvent 可能被系统回收）
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-        let isEsc = keyCode == Int64(kVK_Escape)
+        let flags = event.flags
 
-        DispatchQueue.main.async { [weak self] in
-            if isEsc {
-                self?.onEsc()
+        switch hotKeyMode {
+        case .doubleEsc:
+            if keyCode == Int64(kVK_Escape) {
+                let now = Date()
+                if let last = lastEscTime, now.timeIntervalSince(last) < doubleEscInterval {
+                    lastEscTime = nil
+                    DispatchQueue.main.async { [weak self] in self?.onEsc() }
+                } else {
+                    lastEscTime = now
+                    DispatchQueue.main.async { [weak self] in self?.onKeyEvent() }
+                }
             } else {
-                self?.onKeyEvent()
+                lastEscTime = nil
+                DispatchQueue.main.async { [weak self] in self?.onKeyEvent() }
             }
-        }
+            return Unmanaged.passUnretained(event)
 
-        return Unmanaged.passUnretained(event)
+        case .ctrlSpace:
+            if keyCode == Int64(kVK_Space) && flags.contains(.maskControl) {
+                DispatchQueue.main.async { [weak self] in self?.onEsc() }
+                return nil  // 消费事件，防止系统也响应 Ctrl+Space
+            }
+            DispatchQueue.main.async { [weak self] in self?.onKeyEvent() }
+            return Unmanaged.passUnretained(event)
+        }
     }
 }
 
