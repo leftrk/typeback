@@ -18,17 +18,12 @@ final class AppState {
         didSet { updateCapsLockGuard() }
     }
 
-    var hotKeyMode: HotKeyMode = .doubleEsc {
-        didSet { userDefaults.set(hotKeyMode.rawValue, forKey: hotKeyModeKey) }
-    }
-
     private var capsLockGuard: CapsLockGuard?
 
     private let userDefaults = UserDefaults.standard
     private let timeoutKey = "timeoutSeconds"
     private let launchAtLoginKey = "launchAtLogin"
     private let disableCapsLockKey = "disableCapsLock"
-    private let hotKeyModeKey = "hotKeyMode"
     private let positionKey = "indicatorPosition"
 
     // MARK: - 计算属性
@@ -82,10 +77,6 @@ final class AppState {
         timeoutSeconds = saved > 0 ? saved : 60
         launchAtLogin = userDefaults.bool(forKey: launchAtLoginKey)
         disableCapsLock = userDefaults.bool(forKey: disableCapsLockKey)
-        if let raw = userDefaults.string(forKey: hotKeyModeKey),
-           let mode = HotKeyMode(rawValue: raw) {
-            hotKeyMode = mode
-        }
     }
 
     func saveTimeout(_ seconds: Int) {

@@ -42,19 +42,6 @@ struct SettingsView: View {
             Divider()
 
             settingRow {
-                Picker("立即切回英文", selection: $appState.hotKeyMode) {
-                    ForEach(HotKeyMode.allCases, id: \.self) { mode in
-                        Text(mode.displayName).tag(mode)
-                    }
-                }
-                .fixedSize()
-            } caption: {
-                Text("触发立即切回英文的快捷键。⌃Space 会消费按键，不触发系统输入法切换。")
-            }
-
-            Divider()
-
-            settingRow {
                 Toggle("禁用 Caps Lock 大写锁定", isOn: $appState.disableCapsLock)
             } caption: {
                 Text("仅保留切换输入法功能，彻底禁用长按锁定大写。")

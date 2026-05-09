@@ -4,7 +4,7 @@ import Foundation
 import CoreGraphics
 
 /// 键盘事件监听器
-/// 使用 CGEventTap 实现全局键盘监听，单击 ESC 立即触发回调
+/// 使用 CGEventTap 实现全局键盘监听，⌃Space 立即触发切回英文
 final class KeyEventMonitor: @unchecked Sendable {
     private static let eventMask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
 
@@ -13,12 +13,6 @@ final class KeyEventMonitor: @unchecked Sendable {
 
     private let onKeyEvent: @Sendable () -> Void
     private let onEsc: @Sendable () -> Void
-
-    // CGEventTap 回调运行在主线程，与 @MainActor 同线程，读写安全
-    nonisolated(unsafe) var hotKeyMode: HotKeyMode = .doubleEsc
-
-    private var lastEscTime: Date?
-    private let doubleEscInterval: TimeInterval = 0.3
 
     init(
         onKeyEvent: @escaping @Sendable () -> Void,
@@ -117,31 +111,12 @@ final class KeyEventMonitor: @unchecked Sendable {
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
         let flags = event.flags
 
-        switch hotKeyMode {
-        case .doubleEsc:
-            if keyCode == Int64(kVK_Escape) {
-                let now = Date()
-                if let last = lastEscTime, now.timeIntervalSince(last) < doubleEscInterval {
-                    lastEscTime = nil
-                    DispatchQueue.main.async { [weak self] in self?.onEsc() }
-                } else {
-                    lastEscTime = now
-                    DispatchQueue.main.async { [weak self] in self?.onKeyEvent() }
-                }
-            } else {
-                lastEscTime = nil
-                DispatchQueue.main.async { [weak self] in self?.onKeyEvent() }
-            }
-            return Unmanaged.passUnretained(event)
-
-        case .ctrlSpace:
-            if keyCode == Int64(kVK_Space) && flags.contains(.maskControl) {
-                DispatchQueue.main.async { [weak self] in self?.onEsc() }
-                return nil  // 消费事件，防止系统也响应 Ctrl+Space
-            }
-            DispatchQueue.main.async { [weak self] in self?.onKeyEvent() }
-            return Unmanaged.passUnretained(event)
+        if keyCode == Int64(kVK_Space) && flags.contains(.maskControl) {
+            DispatchQueue.main.async { [weak self] in self?.onEsc() }
+            return nil  // 消费事件，防止系统也响应 Ctrl+Space
         }
+        DispatchQueue.main.async { [weak self] in self?.onKeyEvent() }
+        return Unmanaged.passUnretained(event)
     }
 }
 
