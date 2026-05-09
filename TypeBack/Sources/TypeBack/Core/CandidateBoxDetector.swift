@@ -105,7 +105,8 @@ final class CandidateBoxDetector: @unchecked Sendable {
     private func isInputMethodProcess(_ name: String) -> Bool {
         let inputMethodKeywords = [
             "Input Method",
-            "SCIM",
+            "SCIM",   // Apple 简体中文
+            "TCIM",   // Apple 繁体中文
             "IMK",
             "Sogou",
             "百度",
@@ -118,7 +119,9 @@ final class CandidateBoxDetector: @unchecked Sendable {
     }
 
     private func isCandidateWindow(_ name: String) -> Bool {
-        guard !name.isEmpty else { return false }
+        // kCGWindowName 需要 Screen Recording 权限，无权限时为空。
+        // ownerName 已确认是输入法进程，空名视为候选框。
+        if name.isEmpty { return true }
 
         let candidateKeywords = ["候选", "Candidate", "Input", "Composition"]
         return candidateKeywords.contains { name.contains($0) }
