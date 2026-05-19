@@ -33,6 +33,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupServices()
         setupUI()
+        observeShortcutChanges()
 
         logInfo("应用初始化完成")
     }
@@ -62,14 +63,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         candidateBoxDetector?.start()
 
         keyEventMonitor = KeyEventMonitor(
+            shortcut: appState.shortcut,
             onKeyEvent: { [weak self] in
                 Task { @MainActor [weak self] in
                     self?.handleKeyEvent()
                 }
             },
-            onEsc: { [weak self] in
+            onShortcut: { [weak self] in
                 Task { @MainActor [weak self] in
-                    self?.handleEsc()
+                    self?.handleShortcut()
                 }
             }
         )
@@ -100,7 +102,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         floatingIndicator = FloatingIndicatorController(appState: appState)
         floatingIndicator?.show()
 
-        settingsController = SettingsController(appState: appState)
+        settingsController = SettingsController(
+            appState: appState,
+            startRecording: { [weak self] handler in
+                self?.keyEventMonitor?.startRecording(handler: handler)
+            },
+            stopRecording: { [weak self] in
+                self?.keyEventMonitor?.stopRecording()
+            }
+        )
 
         menuBarController = MenuBarController(
             appState: appState,
@@ -129,6 +139,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
+    // MARK: - 快捷键变更追踪
+    /// 用 Observation 追踪 appState.shortcut 变化，同步到 KeyEventMonitor
+    private func observeShortcutChanges() {
+        withObservationTracking {
+            _ = appState.shortcut
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.keyEventMonitor?.updateShortcut(self.appState.shortcut)
+                self.observeShortcutChanges()
+            }
+        }
+    }
+
     // MARK: - 事件处理
 
     private func handleKeyEvent() {
@@ -138,8 +162,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func handleEsc() {
-        guard appState.isChinese else { return }
+    /// 用户按下「立即回英文」快捷键
+    private func handleShortcut() {
         switchToEnglish()
     }
 
@@ -150,6 +174,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         case .idle:
             appState.setIdle()
+            guard appState.autoSwitchEnabled else { return }
             let timeout = appState.timeoutSeconds
             Task {
                 await typingStateDetector?.startCountdown(seconds: timeout)

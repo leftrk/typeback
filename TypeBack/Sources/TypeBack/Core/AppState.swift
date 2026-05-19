@@ -18,6 +18,22 @@ final class AppState {
         didSet { updateCapsLockGuard() }
     }
 
+    /// 自动回切总开关：关闭后倒计时不启动，仅靠快捷键切回
+    var autoSwitchEnabled: Bool = true {
+        didSet {
+            userDefaults.set(autoSwitchEnabled, forKey: autoSwitchEnabledKey)
+        }
+    }
+
+    /// 「立即回英文」快捷键
+    var shortcut: Shortcut = .default {
+        didSet {
+            if let data = try? JSONEncoder().encode(shortcut) {
+                userDefaults.set(data, forKey: shortcutKey)
+            }
+        }
+    }
+
     private var capsLockGuard: CapsLockGuard?
 
     private let userDefaults = UserDefaults.standard
@@ -25,6 +41,8 @@ final class AppState {
     private let launchAtLoginKey = "launchAtLogin"
     private let disableCapsLockKey = "disableCapsLock"
     private let positionKey = "indicatorPosition"
+    private let autoSwitchEnabledKey = "autoSwitchEnabled"
+    private let shortcutKey = "shortcut"
 
     // MARK: - 计算属性
     var isEnglish: Bool { currentInputState == .english }
@@ -77,6 +95,18 @@ final class AppState {
         timeoutSeconds = saved > 0 ? saved : 60
         launchAtLogin = userDefaults.bool(forKey: launchAtLoginKey)
         disableCapsLock = userDefaults.bool(forKey: disableCapsLockKey)
+        // autoSwitchEnabled 默认 true（旧用户没存这个 key 时也按 true 处理）
+        if userDefaults.object(forKey: autoSwitchEnabledKey) == nil {
+            autoSwitchEnabled = true
+        } else {
+            autoSwitchEnabled = userDefaults.bool(forKey: autoSwitchEnabledKey)
+        }
+        if let data = userDefaults.data(forKey: shortcutKey),
+           let decoded = try? JSONDecoder().decode(Shortcut.self, from: data) {
+            shortcut = decoded
+        } else {
+            shortcut = .default
+        }
     }
 
     func saveTimeout(_ seconds: Int) {

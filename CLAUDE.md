@@ -4,7 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-TypeBack 是一个 macOS Menu Bar 应用，在切换到中文输入法后，停顿一段时间自动回切英文。不含测试，无外部依赖。
+TypeBack 是一个 macOS Menu Bar 应用。核心：
+- 浮动指示器实时显示当前输入法状态（带光晕和状态切换水波动画）
+- 用户自定义快捷键一键切回英文（默认 ⌃Space）
+- 中文停顿超时后自动回切英文（可关闭）
+- Caps Lock 可设为仅切换输入法（可选）
+
+不含测试，无外部依赖。产品文档见 `docs/v2/prd.md`。
 
 ## 常用命令
 
@@ -34,7 +40,7 @@ swift build -c release
 
 ```
 KeyEventMonitor（CGEventTap）
-    ↓ onKeyEvent / onEsc
+    ↓ onKeyEvent / onShortcut
 AppDelegate（@MainActor）
     ↓ resetTyping / startCountdown
 TypingStateDetector（actor）
@@ -50,7 +56,8 @@ FloatingIndicatorController / MenuBarController / SettingsController
 
 - **`AppState`** — 唯一的全局状态源（`@Observable @MainActor`），持久化到 `UserDefaults`；UI 组件直接观察它
 - **`TypingStateDetector`** — `actor`，用 Swift Concurrency `Task` 替代 `Timer` 做倒计时，避免 RunLoop 依赖；通过回调向 `AppDelegate` 报告 `.typing / .idle / .countdown / .timeout`
-- **`KeyEventMonitor`** — 使用 `CGEventTap` 监听全局键盘事件，在 `AppDelegate` 完成 dispatch
+- **`KeyEventMonitor`** — 使用 `CGEventTap` 监听全局键盘事件，匹配用户配置的快捷键时触发 `onShortcut`；运行时可通过 `updateShortcut(_:)` 动态更新
+- **`ShortcutRecorder`** — 临时 `NSEvent.addLocalMonitorForEvents` 监听器，捕获用户按下的一次完整组合键
 - **`CandidateBoxDetector`** — 通过 AX API 检测输入法候选框，有候选框时阻止倒计时切换
 - **`CapsLockGuard`** — 可选功能，拦截 Caps Lock 防误触
 
@@ -71,3 +78,6 @@ FloatingIndicatorController / MenuBarController / SettingsController
 - `AppDelegate` 和所有 UI 操作必须在 `@MainActor`，与 `actor` 交互需 `Task { await ... }`
 - `InputSourceHelper` 封装 TIS API（`TISSelectInputSource`），切换输入法后通过 0.5s 轮询（`inputCheckTimer`）同步 `AppState`
 - 最低 macOS 14.0，使用 `PhaseAnimator` 做多层呼吸动画（需 macOS 17 API 时注意版本门控）
+- `KeyEventMonitor` 是 `@unchecked Sendable`，跨线程访问当前快捷键用 `OSAllocatedUnfairLock`
+- `AppDelegate.observeShortcutChanges` 用 `withObservationTracking` 追踪 `appState.shortcut`，在 onChange 中递归重新订阅以持续监听
+- 指示器 panel **不再设置 `.fullScreenAuxiliary`**，所以全屏应用激活时指示器不会跟到全屏 Space

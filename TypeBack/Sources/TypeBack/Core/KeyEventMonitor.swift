@@ -2,24 +2,54 @@ import Carbon
 import AppKit
 import Foundation
 import CoreGraphics
+import os
 
 /// 键盘事件监听器
-/// 使用 CGEventTap 实现全局键盘监听，⌃Space 立即触发切回英文
+/// 使用 CGEventTap 实现全局键盘监听，匹配用户配置的快捷键时立即触发回调
 final class KeyEventMonitor: @unchecked Sendable {
     private static let eventMask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
+    private static let modifierMask: CGEventFlags = [
+        .maskControl, .maskShift, .maskAlternate, .maskCommand
+    ]
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
     private let onKeyEvent: @Sendable () -> Void
-    private let onEsc: @Sendable () -> Void
+    private let onShortcut: @Sendable () -> Void
+
+    /// 配置的快捷键，可在运行时通过 updateShortcut 修改
+    private let shortcutLock = OSAllocatedUnfairLock<ShortcutValue>(
+        initialState: ShortcutValue.default
+    )
+
+    /// 录制态投喂器：非 nil 时，所有 keyDown 都会被消费并投喂给此回调，不再匹配快捷键
+    private let recordingLock = OSAllocatedUnfairLock<(@Sendable (UInt16, UInt) -> Void)?>(
+        initialState: nil
+    )
+
+    private struct ShortcutValue: Sendable {
+        var keyCode: Int64
+        var modifiers: CGEventFlags
+
+        static let `default` = ShortcutValue(
+            keyCode: Int64(kVK_Space),
+            modifiers: .maskControl
+        )
+    }
 
     init(
+        shortcut: Shortcut = .default,
         onKeyEvent: @escaping @Sendable () -> Void,
-        onEsc: @escaping @Sendable () -> Void
+        onShortcut: @escaping @Sendable () -> Void
     ) {
         self.onKeyEvent = onKeyEvent
-        self.onEsc = onEsc
+        self.onShortcut = onShortcut
+        self.shortcutLock.withLock { state in
+            state.keyCode = Int64(shortcut.keyCode)
+            state.modifiers = CGEventFlags(rawValue: UInt64(shortcut.modifiers))
+                .intersection(Self.modifierMask)
+        }
     }
 
     deinit {
@@ -50,6 +80,23 @@ final class KeyEventMonitor: @unchecked Sendable {
         }
         eventTap = nil
         runLoopSource = nil
+    }
+
+    func updateShortcut(_ shortcut: Shortcut) {
+        shortcutLock.withLock { state in
+            state.keyCode = Int64(shortcut.keyCode)
+            state.modifiers = CGEventFlags(rawValue: UInt64(shortcut.modifiers))
+                .intersection(Self.modifierMask)
+        }
+    }
+
+    /// 开始录制：在收到任何 keyDown 时调用 handler，并消费事件不传递给系统/前台应用
+    func startRecording(handler: @escaping @Sendable (UInt16, UInt) -> Void) {
+        recordingLock.withLock { $0 = handler }
+    }
+
+    func stopRecording() {
+        recordingLock.withLock { $0 = nil }
     }
 
     // MARK: - 私有方法
@@ -109,11 +156,20 @@ final class KeyEventMonitor: @unchecked Sendable {
         }
 
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-        let flags = event.flags
+        let flags = event.flags.intersection(Self.modifierMask)
 
-        if keyCode == Int64(kVK_Space) && flags.contains(.maskControl) {
-            DispatchQueue.main.async { [weak self] in self?.onEsc() }
-            return nil  // 消费事件，防止系统也响应 Ctrl+Space
+        // 录制态：所有 keyDown 都投喂给录制器，并消费（绕过快捷键匹配）
+        if let recordHandler = recordingLock.withLock({ $0 }) {
+            let kc = UInt16(keyCode)
+            let mods = UInt(flags.rawValue)
+            DispatchQueue.main.async { recordHandler(kc, mods) }
+            return nil
+        }
+
+        let target = shortcutLock.withLock { $0 }
+        if keyCode == target.keyCode && flags == target.modifiers {
+            DispatchQueue.main.async { [weak self] in self?.onShortcut() }
+            return nil  // 消费事件，防止系统也响应
         }
         DispatchQueue.main.async { [weak self] in self?.onKeyEvent() }
         return Unmanaged.passUnretained(event)

@@ -7,9 +7,17 @@ final class SettingsController {
     private var window: NSWindow?
     private var closeObserver: NSObjectProtocol?
     private let appState: AppState
+    private let startRecording: ShortcutRecorderView.StartRecording
+    private let stopRecording: ShortcutRecorderView.StopRecording
 
-    init(appState: AppState) {
+    init(
+        appState: AppState,
+        startRecording: @escaping ShortcutRecorderView.StartRecording,
+        stopRecording: @escaping ShortcutRecorderView.StopRecording
+    ) {
         self.appState = appState
+        self.startRecording = startRecording
+        self.stopRecording = stopRecording
     }
 
     func show() {
@@ -28,7 +36,12 @@ final class SettingsController {
         w.title = "TypeBack 设置"
         w.isReleasedWhenClosed = false
 
-        let hostingView = NSHostingView(rootView: SettingsView(appState: appState))
+        let view = SettingsView(
+            appState: appState,
+            startRecording: startRecording,
+            stopRecording: stopRecording
+        )
+        let hostingView = NSHostingView(rootView: view)
         w.contentView = hostingView
         w.setContentSize(hostingView.fittingSize)
         w.center()

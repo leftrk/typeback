@@ -7,7 +7,7 @@ final class FloatingIndicatorController {
     private var window: NSPanel?
     private var hostingView: NSHostingView<IndicatorView>?
 
-    private let windowSize = CGSize(width: 52, height: 52)
+    private let windowSize = CGSize(width: 76, height: 76)
     private let appState: AppState
     private var savedPosition: CGPoint?
     private var observationTask: Task<Void, Never>?
@@ -78,7 +78,7 @@ final class FloatingIndicatorController {
         )
 
         panel.level = .floating
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.collectionBehavior = [.canJoinAllSpaces]
         panel.isFloatingPanel = true
         panel.becomesKeyOnlyIfNeeded = true
         panel.hasShadow = false
@@ -87,11 +87,7 @@ final class FloatingIndicatorController {
         panel.isMovable = true
         panel.isRestorable = false
 
-        let contentView = IndicatorView(
-            appState: appState,
-            onTap: { NotificationCenter.default.post(name: .toggleInputMethod, object: nil) },
-            onDoubleTap: { NotificationCenter.default.post(name: .openSettings, object: nil) }
-        )
+        let contentView = IndicatorView(appState: appState)
 
         let hosting = NSHostingView(rootView: contentView)
         hosting.frame = NSRect(origin: .zero, size: windowSize)
