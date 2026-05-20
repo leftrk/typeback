@@ -143,3 +143,7 @@ docs/.doctrees/
 NOTES.md
 TODO.md
 scratch/
+
+# npx skills (local agent skill cache)
+.agents/
+skills-lock.json

@@ -27,7 +27,7 @@ final class SettingsController {
             return
         }
 
-        let w = NSWindow(
+        let w = EscapeClosingWindow(
             contentRect: .zero,
             styleMask: [.titled, .closable],
             backing: .buffered,
@@ -63,5 +63,12 @@ final class SettingsController {
         window = w
         w.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+}
+
+/// 按 Esc 时关闭窗口。NSResponder 在 Esc 时调用 cancelOperation，沿 responder chain 上传。
+private final class EscapeClosingWindow: NSWindow {
+    override func cancelOperation(_ sender: Any?) {
+        performClose(nil)
     }
 }
