@@ -3,13 +3,13 @@ import SwiftUI
 /// 浮动指示器 — 白底黑字 / 黑底白字，带外发光光晕和状态切换水波动画
 struct ProgressRingIndicator: View {
     let appState: AppState
-    var containerSize: CGFloat = 76
+    var containerSize: CGFloat = 84
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
     @State private var ripples: [Ripple] = []
 
-    private let diameter: CGFloat = 36
+    private let diameter: CGFloat = 40
     private let ringWidth: CGFloat = 1.6
 
     private var isChinese: Bool { appState.currentInputState != .english }
@@ -57,7 +57,7 @@ struct ProgressRingIndicator: View {
         Circle()
             .fill(accentColor)
             .frame(width: diameter, height: diameter)
-            .blur(radius: 9)
+            .blur(radius: 10)
             .opacity(0.55)
     }
 
@@ -106,28 +106,18 @@ struct ProgressRingIndicator: View {
 
     // MARK: - 表盘
 
-    /// EN 用最薄的毛玻璃（能看到背景）；CN 用厚毛玻璃（沉稳）
+    /// EN/CN 都用纯毛玻璃
     private var dialMaterial: AnyShapeStyle {
-        isChinese
-            ? AnyShapeStyle(.thickMaterial)
-            : AnyShapeStyle(.ultraThinMaterial)
+        AnyShapeStyle(.ultraThinMaterial)
     }
 
     private var dial: some View {
         Circle()
-            .fill(dialMaterial)
+            .fill(isChinese
+                ? AnyShapeStyle(Color.black.opacity(0.5))
+                : AnyShapeStyle(.ultraThinMaterial)
+            )
             .frame(width: diameter, height: diameter)
-            .overlay(
-                Circle()
-                    .fill(isChinese
-                        ? Color(white: 0.06).opacity(0.90)
-                        : Color.clear
-                    )
-            )
-            .overlay(
-                Circle()
-                    .strokeBorder(Color.white.opacity(isChinese ? 0.10 : 0.18), lineWidth: 0.5)
-            )
             .animation(.easeInOut(duration: 0.3), value: isChinese)
     }
 
@@ -159,7 +149,7 @@ struct ProgressRingIndicator: View {
 
     private var glyph: some View {
         Text(stateText)
-            .font(.system(size: 11, weight: .medium, design: .rounded))
+            .font(.system(size: 12, weight: .medium, design: .rounded))
             .tracking(0.3)
             .foregroundStyle(isChinese
                 ? Color.white.opacity(0.8)
