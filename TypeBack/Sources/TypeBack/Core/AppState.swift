@@ -8,6 +8,7 @@ final class AppState {
     var currentInputState: InputState = .english
     var countdownSeconds: Int = 0
     var timeoutSeconds: Int = 60
+    var shortcutFlash: Bool = false
 
     // MARK: - 配置
     var launchAtLogin: Bool = false {

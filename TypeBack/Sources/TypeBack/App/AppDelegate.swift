@@ -164,6 +164,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 用户按下「立即回英文」快捷键
     private func handleShortcut() {
+        appState.shortcutFlash = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            appState.shortcutFlash = false
+        }
         switchToEnglish()
     }
 

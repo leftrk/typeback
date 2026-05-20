@@ -58,7 +58,8 @@ struct ProgressRingIndicator: View {
             .fill(accentColor)
             .frame(width: diameter, height: diameter)
             .blur(radius: 10)
-            .opacity(0.55)
+            .opacity(appState.shortcutFlash ? 0.9 : 0.55)
+            .animation(.easeOut(duration: appState.shortcutFlash ? 0.05 : 0.15), value: appState.shortcutFlash)
     }
 
     // MARK: - 水波动画
