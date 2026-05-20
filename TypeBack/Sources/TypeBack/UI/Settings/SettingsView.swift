@@ -76,7 +76,7 @@ struct SettingsView: View {
     }
 
     private var capsLockCard: some View {
-        SettingCard(title: "Caps Lock", caption: "打开后 Caps Lock 不再锁定大写，仅用于切换输入法。") {
+        SettingCard(title: "Caps Lock", caption: "打开后长按 Caps Lock 不再锁定大写，短按仍由系统切换输入法。") {
             settingRow("仅切换输入法") {
                 Toggle("", isOn: $appState.disableCapsLock)
                     .labelsHidden()

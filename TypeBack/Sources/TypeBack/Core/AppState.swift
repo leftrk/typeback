@@ -94,7 +94,12 @@ final class AppState {
         let saved = userDefaults.integer(forKey: timeoutKey)
         timeoutSeconds = saved > 0 ? saved : 60
         launchAtLogin = userDefaults.bool(forKey: launchAtLoginKey)
-        disableCapsLock = userDefaults.bool(forKey: disableCapsLockKey)
+        // disableCapsLock 默认开启：用户基本不需要大写锁定
+        if userDefaults.object(forKey: disableCapsLockKey) == nil {
+            disableCapsLock = true
+        } else {
+            disableCapsLock = userDefaults.bool(forKey: disableCapsLockKey)
+        }
         // autoSwitchEnabled 默认 true（旧用户没存这个 key 时也按 true 处理）
         if userDefaults.object(forKey: autoSwitchEnabledKey) == nil {
             autoSwitchEnabled = true

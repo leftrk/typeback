@@ -16,6 +16,16 @@ enum LogLevel: String, CaseIterable {
         case .error: return .error
         }
     }
+
+    /// 等级优先级（数字越大越严重），用于阈值过滤
+    var priority: Int {
+        switch self {
+        case .debug: return 0
+        case .info: return 1
+        case .warning: return 2
+        case .error: return 3
+        }
+    }
 }
 
 /// 结构化日志系统
@@ -29,8 +39,10 @@ final class Logger {
     private let osLogger: OSLog
 
     private var logFileURL: URL?
-    private let maxLogFileSize: Int = 5 * 1024 * 1024 // 5MB
-    private let maxLogFiles: Int = 3
+    private let maxLogFileSize: Int = 2 * 1024 * 1024 // 2MB
+    private let maxLogFiles: Int = 2
+    /// 文件落盘等级阈值：低于此等级的日志只走 OSLog，不写文件
+    private let minFileLogLevel: LogLevel = .info
 
     // MARK: - 队列
     private let logQueue = DispatchQueue(label: "com.typeback.logger", qos: .utility)
@@ -67,10 +79,11 @@ final class Logger {
         let fileName = (file as NSString).lastPathComponent
         let logMessage = "[\(level.rawValue)] [\(fileName):\(line)] \(function) - \(message)"
 
-        // 输出到控制台
+        // 输出到 OSLog（Console.app 可见，所有等级）
         os_log("%@", log: osLogger, type: level.osLogType, logMessage)
 
-        // 异步写入文件
+        // 文件落盘：仅 minFileLogLevel 及以上等级写入，避免 DEBUG 噪声
+        guard level.priority >= minFileLogLevel.priority else { return }
         logQueue.async { [weak self] in
             self?.writeToFile(logMessage)
         }
