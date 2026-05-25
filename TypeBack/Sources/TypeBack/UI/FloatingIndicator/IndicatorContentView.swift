@@ -116,7 +116,7 @@ struct ProgressRingIndicator: View {
         Circle()
             .fill(isChinese
                 ? AnyShapeStyle(Color.black.opacity(0.5))
-                : AnyShapeStyle(.ultraThinMaterial)
+                : AnyShapeStyle(Color.white.opacity(0.85))
             )
             .frame(width: diameter, height: diameter)
             .animation(.easeInOut(duration: 0.3), value: isChinese)
@@ -154,7 +154,7 @@ struct ProgressRingIndicator: View {
             .tracking(0.3)
             .foregroundStyle(isChinese
                 ? Color.white.opacity(0.8)
-                : Color.black.opacity(0.45)
+                : Color.black.opacity(0.7)
             )
             .contentTransition(.opacity)
             .animation(.easeInOut(duration: 0.25), value: stateText)
