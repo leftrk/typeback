@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 
 TEAM_ID="PP9XRDW4F5"
 APP_NAME="TypeBack"
-APP_VERSION="1.0.2"
+APP_VERSION="1.0.3"
 BUNDLE_ID="com.huaguan.typeback"
 
 # Sparkle 配置 — 需要替换为你的实际值
@@ -34,6 +34,10 @@ mkdir -p "${FRAMEWORKS_DIR}"
 
 # 复制可执行文件
 cp "${BUILD_DIR}/TypeBack" "${MACOS_DIR}/TypeBack"
+
+# 添加 Frameworks rpath（Sparkle 需要）
+install_name_tool -add_rpath "@executable_path/../Frameworks" "${MACOS_DIR}/TypeBack"
+echo "已添加 @executable_path/../Frameworks rpath"
 
 # 复制图标（如果有）
 if [ -f "/tmp/TypeBack.icns" ]; then
