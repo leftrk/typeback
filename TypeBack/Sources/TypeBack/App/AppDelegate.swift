@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import Sparkle
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -19,11 +20,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBarController: MenuBarController?
     private var settingsController: SettingsController?
 
+    // MARK: - Sparkle 更新器
+    private var updaterController: SPUStandardUpdaterController?
+
     // MARK: - 生命周期
     func applicationDidFinishLaunching(_ notification: Notification) {
         logInfo("应用启动")
 
         NSApp.setActivationPolicy(.accessory)
+
+        // 初始化 Sparkle 更新器
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
 
         guard PermissionsHelper.isAccessibilityEnabled() else {
             logError("缺少辅助功能权限")
@@ -114,6 +125,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menuBarController = MenuBarController(
             appState: appState,
+            updater: updaterController?.updater,
             onOpenSettings: { [weak self] in self?.openSettings() },
             onSwitchToEnglish: { [weak self] in self?.switchToEnglish() },
             onQuit: { NSApp.terminate(nil) }

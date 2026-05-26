@@ -1,11 +1,13 @@
 import AppKit
 import SwiftUI
+import Sparkle
 
 /// 菜单栏控制器 — SF Symbol 图标 + 精简下拉菜单
 @MainActor
 final class MenuBarController {
     private var statusItem: NSStatusItem?
     private let appState: AppState
+    private let updater: SPUUpdater?
 
     private let onOpenSettings: () -> Void
     private let onSwitchToEnglish: () -> Void
@@ -15,11 +17,13 @@ final class MenuBarController {
 
     init(
         appState: AppState,
+        updater: SPUUpdater?,
         onOpenSettings: @escaping () -> Void,
         onSwitchToEnglish: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.appState = appState
+        self.updater = updater
         self.onOpenSettings = onOpenSettings
         self.onSwitchToEnglish = onSwitchToEnglish
         self.onQuit = onQuit
@@ -98,6 +102,17 @@ final class MenuBarController {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
+        // 检查更新
+        if let updater = updater {
+            let updateItem = NSMenuItem(
+                title: "检查更新...",
+                action: #selector(handleCheckForUpdates),
+                keyEquivalent: ""
+            )
+            updateItem.target = self
+            menu.addItem(updateItem)
+        }
+
         menu.addItem(NSMenuItem.separator())
 
         let quitItem = NSMenuItem(
@@ -129,6 +144,10 @@ final class MenuBarController {
 
     @objc private func handleSwitchToEnglish() {
         onSwitchToEnglish()
+    }
+
+    @objc private func handleCheckForUpdates() {
+        updater?.checkForUpdates()
     }
 
     @objc private func handleQuit() {
