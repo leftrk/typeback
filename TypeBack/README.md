@@ -55,8 +55,6 @@ TypeBack/Sources/TypeBack/
 └── Utils/         # TIS API、权限、日志
 ```
 
-详细架构与产品需求见 `docs/v2/prd.md`。
-
 ## 技术栈
 
 - Swift 5.10，macOS 14.0+
