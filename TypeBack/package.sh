@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 
 TEAM_ID="PP9XRDW4F5"
 APP_NAME="TypeBack"
-APP_VERSION="1.0.3"
+APP_VERSION="1.1.0"
 BUNDLE_ID="com.huaguan.typeback"
 
 # Sparkle 配置 — 需要替换为你的实际值

@@ -6,7 +6,7 @@ set -e
 cd "$(dirname "$0")"
 
 APP_NAME="TypeBack"
-APP_VERSION="1.0.0"
+APP_VERSION="1.1.0"
 DMG_PATH="${1:-dist/${APP_NAME}.dmg}"
 
 if [ ! -f "$DMG_PATH" ]; then
