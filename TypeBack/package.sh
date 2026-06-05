@@ -131,8 +131,6 @@ cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <string>${APP_VERSION}</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
-    <key>LSUIElement</key>
-    <true/>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2024 Hua Guan. All rights reserved.</string>
     <key>NSPrincipalClass</key>

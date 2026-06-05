@@ -25,10 +25,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var updaterController: SPUStandardUpdaterController?
 
     // MARK: - 生命周期
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // macOS 26 (Tahoe) 上，NSStatusItem 需在 activation policy 设置前注册。
+        // 将 setActivationPolicy(.accessory) 移至此处，避免状态项被分配到屏幕外的隐藏区域。
+        // 同时从 Info.plist 移除 LSUIElement（该键在 Tahoe 上会导致菜单栏图标不显示）。
+        NSApp.setActivationPolicy(.accessory)
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         logInfo("应用启动")
-
-        NSApp.setActivationPolicy(.accessory)
 
         // 初始化 Sparkle 更新器
         updaterController = SPUStandardUpdaterController(
