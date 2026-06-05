@@ -10,7 +10,6 @@ final class MenuBarController {
     private let updater: SPUUpdater?
 
     private let onOpenSettings: () -> Void
-    private let onSwitchToEnglish: () -> Void
     private let onQuit: () -> Void
 
     private var observationTask: Task<Void, Never>?
@@ -19,13 +18,11 @@ final class MenuBarController {
         appState: AppState,
         updater: SPUUpdater?,
         onOpenSettings: @escaping () -> Void,
-        onSwitchToEnglish: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.appState = appState
         self.updater = updater
         self.onOpenSettings = onOpenSettings
-        self.onSwitchToEnglish = onSwitchToEnglish
         self.onQuit = onQuit
 
         setupMenuBar()
@@ -84,16 +81,6 @@ final class MenuBarController {
 
         menu.addItem(NSMenuItem.separator())
 
-        if appState.isChinese {
-            let switchItem = NSMenuItem(
-                title: "立即切回英文",
-                action: #selector(handleSwitchToEnglish),
-                keyEquivalent: ""
-            )
-            switchItem.target = self
-            menu.addItem(switchItem)
-        }
-
         let settingsItem = NSMenuItem(
             title: "设置...",
             action: #selector(handleOpenSettings),
@@ -140,10 +127,6 @@ final class MenuBarController {
     // MARK: - 动作
     @objc private func handleOpenSettings() {
         onOpenSettings()
-    }
-
-    @objc private func handleSwitchToEnglish() {
-        onSwitchToEnglish()
     }
 
     @objc private func handleCheckForUpdates() {

@@ -1,4 +1,5 @@
 import AppKit
+import Carbon
 import SwiftUI
 import Sparkle
 
@@ -127,7 +128,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             appState: appState,
             updater: updaterController?.updater,
             onOpenSettings: { [weak self] in self?.openSettings() },
-            onSwitchToEnglish: { [weak self] in self?.switchToEnglish() },
             onQuit: { NSApp.terminate(nil) }
         )
 
@@ -182,6 +182,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             appState.shortcutFlash = false
         }
         switchToEnglish()
+
+        // 候选框存在时，发 ESC 清除残留候选框
+        if candidateBoxDetector?.hasCandidateBox == true {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                postVirtualKey(keyCode: kVK_Escape)
+            }
+        }
     }
 
     private func handleTypingStateChange(_ state: TypingState) {
@@ -220,6 +228,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - 操作
+
+    /// 发送虚拟按键事件（用于清除候选框等场景）
+    private func postVirtualKey(keyCode: Int) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(keyCode), keyDown: true)
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(keyCode), keyDown: false)
+        keyDown?.post(tap: .cghidEventTap)
+        keyUp?.post(tap: .cghidEventTap)
+    }
 
     private func switchToEnglish() {
         guard appState.isChinese else { return }
