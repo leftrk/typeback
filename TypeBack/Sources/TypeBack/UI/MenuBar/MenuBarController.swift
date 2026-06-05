@@ -90,7 +90,7 @@ final class MenuBarController {
         menu.addItem(settingsItem)
 
         // 检查更新
-        if let updater = updater {
+        if updater != nil {
             let updateItem = NSMenuItem(
                 title: "检查更新...",
                 action: #selector(handleCheckForUpdates),

@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
 
 TEAM_ID="PP9XRDW4F5"
 APP_NAME="TypeBack"
-APP_VERSION="1.1.0"
+APP_VERSION="1.1.1"
 BUNDLE_ID="com.huaguan.typeback"
 
 # 公证 keychain profile（由 notarytool store-credentials 预先配置）
@@ -129,8 +129,6 @@ cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <string>${APP_VERSION}</string>
     <key>CFBundleVersion</key>
     <string>${APP_VERSION}</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2024 Hua Guan. All rights reserved.</string>
     <key>NSPrincipalClass</key>

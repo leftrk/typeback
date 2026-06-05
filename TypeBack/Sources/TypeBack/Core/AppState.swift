@@ -58,7 +58,41 @@ final class AppState {
 
     // MARK: - 初始化
     init() {
+        migrateOldSettings()
         loadSettings()
+    }
+
+    /// 从旧 bundle ID 迁移设置（macOS 26 修复后回退到原 bundle ID）
+    /// v1.1.0 曾用 com.huaguan.typeback.app，v1.1.1 恢复 com.huaguan.typeback
+    private func migrateOldSettings() {
+        // v1.1.0 使用了临时 bundle ID com.huaguan.typeback.app
+        let oldBundleIDs = ["com.huaguan.typeback.app"]
+        let hasMigrated = userDefaults.bool(forKey: "hasMigratedToV111")
+
+        // 只迁移一次
+        if hasMigrated { return }
+
+        for oldBundleID in oldBundleIDs {
+            let oldDefaults = UserDefaults(suiteName: oldBundleID)
+            guard let oldDefaults, oldDefaults.object(forKey: timeoutKey) != nil else { continue }
+
+            // 迁移所有设置
+            let keysToMigrate = [timeoutKey, launchAtLoginKey, disableCapsLockKey,
+                                 autoSwitchEnabledKey, shortcutKey, positionKey]
+
+            for key in keysToMigrate {
+                if let value = oldDefaults.object(forKey: key) {
+                    userDefaults.set(value, forKey: key)
+                }
+            }
+
+            // 标记已迁移
+            userDefaults.set(true, forKey: "hasMigratedToV111")
+            logInfo("已从旧 bundle ID \(oldBundleID) 迁移设置")
+
+            // 清理旧设置
+            oldDefaults.removeSuite(named: oldBundleID)
+        }
     }
 
     // MARK: - 状态转换
