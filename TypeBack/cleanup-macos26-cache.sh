@@ -41,6 +41,15 @@ sqlite3 ~/Library/DuetExpertCenter/_ATXDataStore.db "DELETE FROM alogBundleId WH
 echo "清理旧配置..."
 defaults delete com.huaguan.typeback 2>/dev/null || true
 defaults delete com.huaguan.typeback.app 2>/dev/null || true
+defaults delete com.huaguan.typeback.fixed 2>/dev/null || true
+defaults delete com.huaguan.typeback.macos26test 2>/dev/null || true
+defaults delete com.huaguan.typeback.test 2>/dev/null || true
+defaults delete com.huaguan.typeback.v111 2>/dev/null || true
+defaults delete com.huaguan.typeback.v2test 2>/dev/null || true
+defaults delete com.test.fresh.typeback 2>/dev/null || true
+defaults delete TypeBack 2>/dev/null || true
+defaults delete TypeBackStandalone 2>/dev/null || true
+defaults delete com.jordanbaird.Ice 2>/dev/null || true
 
 # 7. 重新注册新版本
 echo "重新注册 TypeBack..."
