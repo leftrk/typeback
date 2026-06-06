@@ -2,37 +2,36 @@
 # TypeBack 打包脚本：构建 → 签名 → 公证 → staple → DMG → 公证 DMG → appcast
 #
 # 用法:
-#   ./package.sh                  # 完整发布流程（含公证，需联网，需 GUI 会话美化 DMG）
+#   ./package.sh                  # 完整发布流程（含公证，需联网）
 #   ./package.sh --skip-notarize  # 仅构建+签名+打 DMG，跳过公证（快速本地验证）
-#   ./package.sh --no-fancy       # 跳过 DMG Finder 美化（CI / 后台 / 无 GUI 环境）
+#   ./package.sh --no-fancy       # 兼容旧参数；当前 DMG 流程不依赖 Finder 美化
 #   可组合: ./package.sh --skip-notarize --no-fancy
 #
 # 产物：dist/TypeBack.app（已签名/公证/staple）、dist/TypeBack.zip、dist/TypeBack.dmg
 
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")"
 
-TEAM_ID="PP9XRDW4F5"
 APP_NAME="TypeBack"
-APP_VERSION="1.1.1"
-BUNDLE_ID="com.huaguan.typeback"
+APP_VERSION="$(tr -d '[:space:]' < VERSION)"
+BUNDLE_ID="${BUNDLE_ID:-com.huaguan.typeback}"
 
 # 公证 keychain profile（由 notarytool store-credentials 预先配置）
-NOTARY_PROFILE="typeback-notary"
-SIGN_IDENTITY="Developer ID Application: Hua Guan (${TEAM_ID})"
+NOTARY_PROFILE="${NOTARY_PROFILE:-typeback-notary}"
+SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Hua Guan (PP9XRDW4F5)}"
 
 # Sparkle 配置
-SU_FEED_URL="https://leftrk.github.io/homebrew-tap/appcast.xml"
-SU_PUBLIC_ED_KEY="a9nYk9K6qPR+pXX2YjMfrif0HCCfZlAUdInFHm77DnU="  # EdDSA 公钥
+SU_FEED_URL="${SU_FEED_URL:-https://leftrk.github.io/homebrew-tap/appcast.xml}"
+SU_PUBLIC_ED_KEY="${SU_PUBLIC_ED_KEY:-a9nYk9K6qPR+pXX2YjMfrif0HCCfZlAUdInFHm77DnU=}"  # EdDSA 公钥
 
 # 图标源：优先仓库内固定位置，回落到 /tmp（兼容旧流程）
 ICON_SRC="AppIcon.icns"
 [ -f "$ICON_SRC" ] || ICON_SRC="/tmp/${APP_NAME}.icns"
 
 # 路径
-BUILD_DIR=".build/release"
-FRAMEWORK_DIR=".build/arm64-apple-macosx/release"
+BUILD_DIR=""
+SPARKLE_FRAMEWORK_PATH="${SPARKLE_FRAMEWORK_PATH:-}"
 APP_DIR="dist/${APP_NAME}.app"
 CONTENTS_DIR="${APP_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
@@ -52,27 +51,71 @@ for arg in "$@"; do
     esac
 done
 
-# 用 create-dmg 生成标准拖拽安装布局的 DMG。
-# 默认带 Finder 窗口美化（需 GUI 会话）；--no-fancy 跳过美化，
-# 适用于 CI / 后台 / 无登录会话环境（否则 osascript 美化步骤会卡住或留下 rw.*.dmg）。
+# 生成标准拖拽安装布局的 DMG。
+# 不依赖 Finder/AppleScript 美化，避免 macOS 26 上 Finder 元数据或 provenance xattr
+# 污染已签名的 .app bundle。
 create_dmg() {
     rm -f "${DMG_PATH}"
-    local fancy_args=(
-        --volname "${APP_NAME}"
-        --window-pos 200 120
-        --window-size 600 360
-        --icon-size 100
-        --icon "${APP_NAME}.app" 150 180
-        --hide-extension "${APP_NAME}.app"
-        --app-drop-link 450 180
-        --no-internet-enable
+    rm -rf "dist/dmg-stage"
+    mkdir -p "dist/dmg-stage"
+    ditto --noextattr --noqtn "${APP_DIR}" "dist/dmg-stage/${APP_NAME}.app"
+    ln -s /Applications "dist/dmg-stage/Applications"
+    xattr -cr "dist/dmg-stage/${APP_NAME}.app"
+    codesign --verify --deep --strict --verbose=2 "dist/dmg-stage/${APP_NAME}.app"
+
+    hdiutil create \
+        -volname "${APP_NAME}" \
+        -srcfolder "dist/dmg-stage" \
+        -format UDZO \
+        -fs APFS \
+        -ov \
+        "${DMG_PATH}"
+}
+
+require_tool() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "错误: 缺少依赖工具: $1"
+        exit 1
+    fi
+}
+
+require_tool swift
+require_tool codesign
+require_tool ditto
+require_tool install_name_tool
+require_tool xattr
+require_tool hdiutil
+
+find_sparkle_framework() {
+    if [ -n "${SPARKLE_FRAMEWORK_PATH}" ]; then
+        if [ -d "${SPARKLE_FRAMEWORK_PATH}" ]; then
+            printf '%s\n' "${SPARKLE_FRAMEWORK_PATH}"
+            return 0
+        fi
+        echo "错误: SPARKLE_FRAMEWORK_PATH 不存在: ${SPARKLE_FRAMEWORK_PATH}" >&2
+        return 1
+    fi
+
+    local candidates=(
+        "${BUILD_DIR}/Sparkle.framework"
+        ".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+        ".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-x86_64/Sparkle.framework"
     )
-    [ "${NO_FANCY}" -eq 1 ] && fancy_args+=(--skip-jenkins)
-    create-dmg "${fancy_args[@]}" "${DMG_PATH}" "${APP_DIR}"
+    local candidate
+    for candidate in "${candidates[@]}"; do
+        if [ -d "${candidate}" ]; then
+            printf '%s\n' "${candidate}"
+            return 0
+        fi
+    done
+
+    echo "错误: 未找到 Sparkle.framework。请先运行 swift build -c release。" >&2
+    return 1
 }
 
 echo "=== 构建 Release 版本 ==="
 swift build -c release
+BUILD_DIR="$(swift build -c release --show-bin-path)"
 
 echo "=== 创建 App Bundle ==="
 rm -rf dist
@@ -95,15 +138,14 @@ else
     echo "⚠️  未找到图标 ${ICON_SRC}，跳过（app 将无图标）"
 fi
 
-# 复制 Sparkle.framework
-if [ -d "${FRAMEWORK_DIR}/Sparkle.framework" ]; then
-    cp -R "${FRAMEWORK_DIR}/Sparkle.framework" "${FRAMEWORKS_DIR}/"
-    # 签名 Sparkle.framework
-    codesign --force --deep --sign "${SIGN_IDENTITY}" \
-        --options runtime \
-        "${FRAMEWORKS_DIR}/Sparkle.framework"
-    echo "Sparkle.framework 已签名"
-fi
+# 复制 Sparkle.framework。TypeBack 可执行文件链接到 @rpath/Sparkle.framework；
+# 缺失 framework 时必须失败，不能产出无法启动的 app bundle。
+SPARKLE_SOURCE="$(find_sparkle_framework)"
+cp -R "${SPARKLE_SOURCE}" "${FRAMEWORKS_DIR}/"
+codesign --force --deep --sign "${SIGN_IDENTITY}" \
+    --options runtime \
+    "${FRAMEWORKS_DIR}/Sparkle.framework"
+echo "Sparkle.framework 已嵌入并签名: ${SPARKLE_SOURCE}"
 
 # 创建 Info.plist
 cat > "${CONTENTS_DIR}/Info.plist" << EOF
@@ -153,6 +195,9 @@ cat >> "${CONTENTS_DIR}/Info.plist" << EOF
 </plist>
 EOF
 
+echo "=== 清理扩展属性 ==="
+xattr -cr "${APP_DIR}"
+
 echo "=== 签名应用 ==="
 codesign --force --deep --sign "${SIGN_IDENTITY}" \
     --options runtime \
@@ -170,6 +215,8 @@ if [ "${SKIP_NOTARIZE}" -eq 1 ]; then
     echo "⏭  已跳过公证（--skip-notarize）"
     echo "=== 生成 DMG（未公证）==="
     create_dmg
+    echo "=== 验证 DMG 生成后 App 签名 ==="
+    codesign --verify --deep --strict --verbose=2 "${APP_DIR}"
     echo ""
     echo "✅ 构建完成（未公证）: ${DMG_PATH}"
     exit 0
@@ -186,6 +233,8 @@ spctl --assess --type execute --verbose "${APP_DIR}"
 # 生成 DMG（封装已 staple 的 app）
 echo "=== 生成 DMG ==="
 create_dmg
+echo "=== 验证 DMG 生成后 App 签名 ==="
+codesign --verify --deep --strict --verbose=2 "${APP_DIR}"
 
 echo "=== 签名 DMG ==="
 codesign --force --sign "${SIGN_IDENTITY}" "${DMG_PATH}"

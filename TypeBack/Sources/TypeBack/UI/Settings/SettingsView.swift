@@ -9,6 +9,7 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 14) {
             heroSection
+            permissionCard
             autoSwitchCard
             shortcutCard
             capsLockCard
@@ -41,6 +42,29 @@ struct SettingsView: View {
     }
 
     // MARK: - 卡片
+
+    @ViewBuilder
+    private var permissionCard: some View {
+        if !appState.accessibilityPermissionGranted {
+            SettingCard(title: "权限", caption: "授权后 TypeBack 会自动开始监听键盘，不需要重启应用。") {
+                HStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+
+                    Text("需要辅助功能权限")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+
+                    Spacer(minLength: 12)
+
+                    Button("打开设置") {
+                        PermissionsHelper.requestAccessibilityPermissionPrompt()
+                        PermissionsHelper.openAccessibilitySettings()
+                    }
+                    .controlSize(.small)
+                }
+            }
+        }
+    }
 
     private var autoSwitchCard: some View {
         SettingCard(title: "自动回切", caption: "关闭后不再自动回切，仅靠快捷键切回英文。") {

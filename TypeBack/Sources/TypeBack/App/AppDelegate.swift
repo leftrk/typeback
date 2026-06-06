@@ -15,6 +15,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var candidateBoxDetector: CandidateBoxDetector?
     private var typingStateDetector: TypingStateDetector?
     private var inputCheckTimer: Timer?
+    private var permissionCheckTimer: Timer?
+    private var servicesStarted = false
 
     // MARK: - UI 控制器
     private var floatingIndicator: FloatingIndicatorController?
@@ -27,9 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - 生命周期
     func applicationWillFinishLaunching(_ notification: Notification) {
         // macOS 26 (Tahoe) 上，NSStatusItem 需在 activation policy 设置前注册。
-        // 将 setActivationPolicy(.accessory) 移至此处，避免状态项被分配到屏幕外的隐藏区域。
-        // 同时从 Info.plist 移除 LSUIElement（该键在 Tahoe 上会导致菜单栏图标不显示）。
-        NSApp.setActivationPolicy(.accessory)
+        // 这里不要设置 .accessory；等菜单栏项创建完成后再隐藏 Dock 图标。
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -42,15 +42,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             userDriverDelegate: nil
         )
 
-        guard PermissionsHelper.isAccessibilityEnabled() else {
-            logError("缺少辅助功能权限")
-            showPermissionAlert()
-            return
-        }
-
-        setupServices()
         setupUI()
+        NSApp.setActivationPolicy(.accessory)
         observeShortcutChanges()
+        startPermissionMonitoring()
+
+        if PermissionsHelper.isAccessibilityEnabled() {
+            appState.accessibilityPermissionGranted = true
+            startCoreServicesIfPermitted()
+        } else {
+            appState.accessibilityPermissionGranted = false
+            logWarning("缺少辅助功能权限，等待用户授权")
+            PermissionsHelper.requestAccessibilityPermissionPrompt()
+        }
 
         logInfo("应用初始化完成")
     }
@@ -59,6 +63,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         logInfo("应用即将退出")
 
         inputCheckTimer?.invalidate()
+        permissionCheckTimer?.invalidate()
         Task {
             await typingStateDetector?.stop()
         }
@@ -67,7 +72,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - 服务设置
-    private func setupServices() {
+    private func startCoreServicesIfPermitted() {
+        guard PermissionsHelper.isAccessibilityEnabled() else { return }
+        guard !servicesStarted else { return }
+
+        servicesStarted = true
+        appState.applyRuntimeConfiguration()
+
         candidateBoxDetector = CandidateBoxDetector(
             onCandidateBoxStateChanged: { [weak self] hasBox in
                 Task { @MainActor [weak self] in
@@ -111,6 +122,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor [weak self] in
                 self?.checkCurrentInputSource()
             }
+        }
+    }
+
+    private func startPermissionMonitoring() {
+        permissionCheckTimer?.invalidate()
+        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshAccessibilityPermission()
+            }
+        }
+        refreshAccessibilityPermission()
+    }
+
+    private func refreshAccessibilityPermission() {
+        let granted = PermissionsHelper.isAccessibilityEnabled()
+        guard appState.accessibilityPermissionGranted != granted else { return }
+
+        appState.accessibilityPermissionGranted = granted
+        if granted {
+            logInfo("辅助功能权限已授权")
+            startCoreServicesIfPermitted()
+        } else {
+            logWarning("辅助功能权限已撤销")
         }
     }
 
@@ -269,20 +303,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func openSettings() {
         settingsController?.show()
-    }
-
-    private func showPermissionAlert() {
-        let alert = NSAlert()
-        alert.messageText = "需要辅助功能权限"
-        alert.informativeText = "TypeBack 需要辅助功能权限来监听键盘事件。\n请在 系统设置 → 隐私与安全性 → 辅助功能 中授权。"
-        alert.addButton(withTitle: "打开系统设置")
-        alert.addButton(withTitle: "退出")
-        alert.alertStyle = .warning
-
-        if alert.runModal() == .alertFirstButtonReturn {
-            PermissionsHelper.openAccessibilitySettings()
-        }
-        NSApp.terminate(nil)
     }
 
     // MARK: - 通知处理

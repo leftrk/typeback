@@ -7,12 +7,13 @@
 # 用法: ./generate_appcast.sh [DMG路径]   （默认 dist/TypeBack.dmg）
 # 输出: dist/appcast.xml
 
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")"
 
 APP_NAME="TypeBack"
-APP_VERSION="1.1.0"
+APP_VERSION="$(tr -d '[:space:]' < VERSION)"
+APP_MIN_SYSTEM_VERSION="${APP_MIN_SYSTEM_VERSION:-14.0}"
 DMG_PATH="${1:-dist/${APP_NAME}.dmg}"
 
 # release 下载地址前缀：generate_appcast 会据此生成 enclosure url
@@ -20,6 +21,15 @@ DOWNLOAD_URL_PREFIX="https://github.com/leftrk/typeback/releases/download/v${APP
 PROJECT_LINK="https://github.com/leftrk/typeback"
 
 SPARKLE_BIN=".build/artifacts/sparkle/Sparkle/bin"
+
+require_tool() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "错误: 缺少依赖工具: $1"
+        exit 1
+    fi
+}
+
+require_tool ruby
 
 if [ ! -f "$DMG_PATH" ]; then
     echo "错误: DMG 文件不存在: $DMG_PATH"
@@ -44,6 +54,24 @@ echo "=== 生成 appcast 条目 ==="
 
 cp "$WORK_DIR/appcast.xml" "dist/appcast.xml"
 
+ruby -r rexml/document -e '
+  path, minimum_version = ARGV
+  xml = File.read(path)
+  doc = REXML::Document.new(xml)
+  doc.elements.each("//item") do |item|
+    element = item.elements.to_a.find { |child|
+      child.prefix == "sparkle" && child.name == "minimumSystemVersion"
+    }
+    element ||= item.add_element("sparkle:minimumSystemVersion")
+    element.text = minimum_version
+  end
+  formatter = REXML::Formatters::Pretty.new(4)
+  formatter.compact = true
+  File.open(path, "w") { |file| formatter.write(doc, file) }
+  File.open(path, "a") { |file| file.write("\n") }
+' "dist/appcast.xml" "${APP_MIN_SYSTEM_VERSION}"
+
 echo ""
 echo "✅ appcast.xml 已生成: dist/appcast.xml"
+echo "   minimumSystemVersion: ${APP_MIN_SYSTEM_VERSION}"
 echo "   请将其内容同步到 homebrew-tap 仓库的 appcast.xml"

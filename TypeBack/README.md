@@ -1,6 +1,6 @@
 # TypeBack
 
-macOS 输入法状态可视化与自动回切工具。圆形浮动指示器实时显示输入法状态，按下自定义快捷键一键切回英文，或在中文停止输入超时后自动回切。
+macOS 14~26 输入法状态可视化与自动回切工具。圆形浮动指示器实时显示输入法状态，按下自定义快捷键一键切回英文，或在中文停止输入超时后自动回切。
 
 ## 功能
 
@@ -27,11 +27,30 @@ swift build
 .build/debug/TypeBack
 ```
 
+## 安装
+
+发布版建议通过 Homebrew Cask 安装：
+
+```bash
+brew tap leftrk/tap
+brew install --cask typeback
+```
+
+中国大陆网络环境下，如 Homebrew 或 SwiftPM 拉取依赖较慢，可先设置本机代理：
+
+```bash
+export HTTP_PROXY=http://127.0.0.1:7890
+export HTTPS_PROXY=http://127.0.0.1:7890
+export ALL_PROXY=socks5://127.0.0.1:7890
+```
+
 ## 权限
 
 首次运行需要授权 **辅助功能权限**：
 
 系统设置 → 隐私与安全性 → 辅助功能 → 添加 TypeBack（或终端）
+
+授权后 TypeBack 会自动启动键盘监听，不需要重启应用。
 
 ## 配置
 
@@ -57,7 +76,7 @@ TypeBack/Sources/TypeBack/
 
 ## 技术栈
 
-- Swift 5.10，macOS 14.0+
+- Swift 5.10，macOS 14.0+（目标兼容 macOS 14~26）
 - SwiftUI + AppKit（NSPanel 浮动窗口）
 - CGEventTap 全局键盘监听，TIS API 输入法切换
 

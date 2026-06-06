@@ -9,6 +9,7 @@ final class AppState {
     var countdownSeconds: Int = 0
     var timeoutSeconds: Int = 60
     var shortcutFlash: Bool = false
+    var accessibilityPermissionGranted: Bool = false
 
     // MARK: - 配置
     var launchAtLogin: Bool = false {
@@ -156,6 +157,12 @@ final class AppState {
 
     private func updateCapsLockGuard() {
         userDefaults.set(disableCapsLock, forKey: disableCapsLockKey)
+        guard accessibilityPermissionGranted else {
+            capsLockGuard?.stop()
+            capsLockGuard = nil
+            return
+        }
+
         if disableCapsLock {
             if capsLockGuard == nil {
                 capsLockGuard = CapsLockGuard()
@@ -166,6 +173,10 @@ final class AppState {
             capsLockGuard?.stop()
             capsLockGuard = nil
         }
+    }
+
+    func applyRuntimeConfiguration() {
+        updateCapsLockGuard()
     }
 
     private func updateLaunchAtLogin() {
