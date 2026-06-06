@@ -23,8 +23,7 @@ export ALL_PROXY=socks5://127.0.0.1:7890
 
 ## Version
 
-Keep the release version in `VERSION`. The packaging and appcast scripts read
-from that file.
+Keep the release version in `VERSION`. The packaging script reads from that file.
 
 ## Local Verification
 
@@ -47,8 +46,7 @@ macOS releases.
 
 ```bash
 ./package.sh --no-fancy
-./generate_appcast.sh
-gh release create "v$(cat VERSION)" dist/TypeBack.dmg dist/appcast.xml
+gh release create "v$(cat VERSION)" dist/TypeBack.dmg
 ```
 
 `package.sh` accepts these environment overrides:
@@ -56,8 +54,6 @@ gh release create "v$(cat VERSION)" dist/TypeBack.dmg dist/appcast.xml
 - `BUNDLE_ID`
 - `SIGN_IDENTITY`
 - `NOTARY_PROFILE`
-- `SU_FEED_URL`
-- `SU_PUBLIC_ED_KEY`
 
 ## Homebrew Cask
 
@@ -65,8 +61,8 @@ Update your tap with the release version and SHA-256 printed by `package.sh`.
 
 ```ruby
 cask "typeback" do
-  version "1.1.1"
-  sha256 "36751e11a75b695d9d9bc93a3b2e9eb2f7c6593ec0bc953745ebf4d32e02c07c"
+  version "1.1.5"
+  sha256 "53ef5d00053960f1b9deb52cf8131e115ebbe41a58189c05f2c34ccf22f3f390"
 
   url "https://github.com/leftrk/typeback/releases/download/v#{version}/TypeBack.dmg"
   name "TypeBack"

@@ -1,6 +1,6 @@
 # TypeBack
 
-macOS 14~26 输入法状态可视化与自动回切工具。圆形浮动指示器实时显示输入法状态，按下自定义快捷键一键切回英文，或在中文停止输入超时后自动回切。
+TypeBack 是一个简单的原生 macOS 菜单栏应用，用于输入法状态可视化与自动回切。目标兼容 macOS 14~26。
 
 ## 功能
 
@@ -11,6 +11,8 @@ macOS 14~26 输入法状态可视化与自动回切工具。圆形浮动指示�
 - **系统唤醒**：电脑唤醒后自动切到英文
 - **Caps Lock 仅切换输入法**（可选）：打开后长按 Caps Lock 不再锁定大写
 - **全屏不打扰**：全屏应用激活时指示器自动隐藏
+
+TypeBack 通过 Homebrew 发布和更新，不内置自动更新框架。
 
 ## 构建与运行
 
@@ -77,7 +79,7 @@ TypeBack/Sources/TypeBack/
 ## 技术栈
 
 - Swift 5.10，macOS 14.0+（目标兼容 macOS 14~26）
-- SwiftUI + AppKit（NSPanel 浮动窗口）
+- AppKit 菜单栏应用，SwiftUI 仅用于设置窗口和浮动指示器内容
 - CGEventTap 全局键盘监听，TIS API 输入法切换
 
 ## License
