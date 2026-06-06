@@ -42,19 +42,14 @@ final class MenuBarController {
             NSStatusBar.system.removeStatusItem(statusItem)
         }
 
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem?.autosaveName = Self.statusItemAutosaveName
 
         if let button = statusItem?.button {
             button.toolTip = "TypeBack"
-            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-            if let image = NSImage(systemSymbolName: "character.cursor.ibeam", accessibilityDescription: "TypeBack") {
-                button.image = image.withSymbolConfiguration(config)
-                button.image?.isTemplate = true
-            } else {
-                button.title = "TB"
-                statusItem?.length = NSStatusItem.variableLength
-            }
+            button.image = nil
+            button.title = "TB"
+            button.font = .monospacedSystemFont(ofSize: 13, weight: .semibold)
         }
 
         updateMenu()

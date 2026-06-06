@@ -4,7 +4,7 @@
 # 问题：v1.1.0 之前版本的 TypeBack 在 macOS 26 上菜单栏图标不显示。
 # 原因：LSMinimumSystemVersion=14.0 导致 macOS 26 将状态项放置到屏幕外。
 #
-# 此脚本清理系统缓存，让 v1.1.1 正常显示菜单栏图标。
+# 此脚本清理系统缓存，让当前版本正常显示菜单栏图标。
 #
 # 使用方法：
 #   chmod +x cleanup-macos26-cache.sh
@@ -55,5 +55,5 @@ echo "✅ 清理完成！"
 echo ""
 echo "下一步："
 echo "  1. 通过 Homebrew 安装新版本: brew reinstall --cask typeback"
-echo "  2. 或手动安装 v1.1.1 DMG"
+echo "  2. 或手动安装最新版本 DMG"
 echo "  3. 启动 TypeBack，菜单栏图标应正常显示"
