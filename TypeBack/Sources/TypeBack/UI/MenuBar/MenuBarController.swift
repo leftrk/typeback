@@ -5,6 +5,8 @@ import Sparkle
 /// 菜单栏控制器 — SF Symbol 图标 + 精简下拉菜单
 @MainActor
 final class MenuBarController {
+    private static let statusItemAutosaveName = "com.huaguan.typeback.statusItem"
+
     private var statusItem: NSStatusItem?
     private let appState: AppState
     private let updater: SPUUpdater?
@@ -41,6 +43,7 @@ final class MenuBarController {
         }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem?.autosaveName = Self.statusItemAutosaveName
 
         if let button = statusItem?.button {
             button.toolTip = "TypeBack"

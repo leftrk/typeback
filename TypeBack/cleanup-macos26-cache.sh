@@ -30,6 +30,8 @@ $lsregister -u /Applications/TypeBack.app 2>/dev/null || true
 # 4. 清理 displayablemenuextras plist（菜单栏状态缓存）
 echo "清理菜单栏状态缓存..."
 rm -f ~/Library/Preferences/ByHost/com.apple.controlcenter.displayablemenuextras*.plist 2>/dev/null || true
+rm -f ~/Library/Preferences/com.apple.controlcenter.plist 2>/dev/null || true
+rm -f ~/Library/Preferences/ByHost/com.apple.controlcenter*.plist 2>/dev/null || true
 
 # 5. 清理 DuetExpertCenter 中的 app 记录
 echo "清理 DuetExpertCenter 数据库..."

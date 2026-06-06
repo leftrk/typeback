@@ -5,6 +5,14 @@ All notable changes to TypeBack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-06-06
+
+### Fixed
+- Set a stable menu bar status item autosave name to avoid duplicate TypeBack
+  entries in macOS 26 Control Center/Menu Bar settings.
+- Expand the macOS 26 cache cleanup script to remove additional Control Center
+  preference caches before relaunching TypeBack.
+
 ## [1.1.1] - 2026-06-06
 
 ### Fixed
