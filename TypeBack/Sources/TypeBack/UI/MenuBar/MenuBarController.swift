@@ -49,6 +49,16 @@ final class MenuBarController {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
+        let aboutItem = NSMenuItem(
+            title: "关于 TypeBack",
+            action: #selector(handleAbout),
+            keyEquivalent: ""
+        )
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+
+        menu.addItem(.separator())
+
         let quitItem = NSMenuItem(
             title: "退出 TypeBack",
             action: #selector(handleQuit),
@@ -63,6 +73,17 @@ final class MenuBarController {
     // MARK: - 动作
     @objc private func handleOpenSettings() {
         onOpenSettings()
+    }
+
+    @objc private func handleAbout() {
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .applicationName: "TypeBack",
+            .credits: NSAttributedString(
+                string: "macOS 输入法状态指示与自动回切工具\n\n固定应用身份：com.typeback.app",
+                attributes: [.font: NSFont.systemFont(ofSize: 11)]
+            )
+        ])
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func handleQuit() {
