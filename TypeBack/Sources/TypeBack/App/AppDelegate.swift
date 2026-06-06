@@ -22,13 +22,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBarController: MenuBarController?
     private var settingsController: SettingsController?
 
-    // MARK: - 生命周期
-    func applicationWillFinishLaunching(_ notification: Notification) {
-        setupMenuBar()
-    }
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         logInfo("应用启动")
+        setupMenuBar()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             self?.finishStartup()
@@ -144,7 +140,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - UI 设置
     private func setupMenuBar() {
         menuBarController = MenuBarController(
-            appState: appState,
             onOpenSettings: { [weak self] in self?.openSettings() },
             onQuit: { NSApp.terminate(nil) }
         )

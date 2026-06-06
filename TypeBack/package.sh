@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
 
 APP_NAME="TypeBack"
 APP_VERSION="$(tr -d '[:space:]' < VERSION)"
-BUNDLE_ID="${BUNDLE_ID:-com.huaguan.typeback}"
+BUNDLE_ID="${BUNDLE_ID:-com.typeback.app}"
 
 # 公证 keychain profile（由 notarytool store-credentials 预先配置）
 NOTARY_PROFILE="${NOTARY_PROFILE:-typeback-notary}"

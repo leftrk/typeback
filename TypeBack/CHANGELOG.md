@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Restore floating indicator initialization that was accidentally removed during
   the macOS 26 menu bar simplification work.
+- Change the bundle identifier to `com.typeback.app` to avoid corrupted macOS 26
+  menu bar cache state for the previous identifier on affected systems.
+- Restore the native menu bar symbol, with text fallback only if the symbol is
+  unavailable.
 
 ## [1.1.6] - 2026-06-06
 
