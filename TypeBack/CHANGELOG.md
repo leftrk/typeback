@@ -5,6 +5,14 @@ All notable changes to TypeBack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-06-06
+
+### Fixed
+- Restore TypeBack as a pure menu bar app: add `LSUIElement`, set accessory
+  activation before launch finishes, and remove the macOS 26 floating fallback.
+- Remove Sparkle and keep Homebrew as the only update channel, reducing launch
+  complexity for macOS 26 menu bar status item registration.
+
 ## [1.1.4] - 2026-06-06
 
 ### Fixed

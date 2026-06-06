@@ -1,5 +1,5 @@
 #!/bin/bash
-# TypeBack 打包脚本：构建 → 签名 → 公证 → staple → DMG → 公证 DMG → appcast
+# TypeBack 打包脚本：构建 → 签名 → 公证 → staple → DMG → 公证 DMG
 #
 # 用法:
 #   ./package.sh                  # 完整发布流程（含公证，需联网）
@@ -21,22 +21,16 @@ BUNDLE_ID="${BUNDLE_ID:-com.huaguan.typeback}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-typeback-notary}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Hua Guan (PP9XRDW4F5)}"
 
-# Sparkle 配置
-SU_FEED_URL="${SU_FEED_URL:-https://leftrk.github.io/homebrew-tap/appcast.xml}"
-SU_PUBLIC_ED_KEY="${SU_PUBLIC_ED_KEY:-a9nYk9K6qPR+pXX2YjMfrif0HCCfZlAUdInFHm77DnU=}"  # EdDSA 公钥
-
 # 图标源：优先仓库内固定位置，回落到 /tmp（兼容旧流程）
 ICON_SRC="AppIcon.icns"
 [ -f "$ICON_SRC" ] || ICON_SRC="/tmp/${APP_NAME}.icns"
 
 # 路径
 BUILD_DIR=""
-SPARKLE_FRAMEWORK_PATH="${SPARKLE_FRAMEWORK_PATH:-}"
 APP_DIR="dist/${APP_NAME}.app"
 CONTENTS_DIR="${APP_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
-FRAMEWORKS_DIR="${CONTENTS_DIR}/Frameworks"
 ZIP_PATH="dist/${APP_NAME}.zip"
 DMG_PATH="dist/${APP_NAME}.dmg"
 
@@ -82,36 +76,8 @@ require_tool() {
 require_tool swift
 require_tool codesign
 require_tool ditto
-require_tool install_name_tool
 require_tool xattr
 require_tool hdiutil
-
-find_sparkle_framework() {
-    if [ -n "${SPARKLE_FRAMEWORK_PATH}" ]; then
-        if [ -d "${SPARKLE_FRAMEWORK_PATH}" ]; then
-            printf '%s\n' "${SPARKLE_FRAMEWORK_PATH}"
-            return 0
-        fi
-        echo "错误: SPARKLE_FRAMEWORK_PATH 不存在: ${SPARKLE_FRAMEWORK_PATH}" >&2
-        return 1
-    fi
-
-    local candidates=(
-        "${BUILD_DIR}/Sparkle.framework"
-        ".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
-        ".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-x86_64/Sparkle.framework"
-    )
-    local candidate
-    for candidate in "${candidates[@]}"; do
-        if [ -d "${candidate}" ]; then
-            printf '%s\n' "${candidate}"
-            return 0
-        fi
-    done
-
-    echo "错误: 未找到 Sparkle.framework。请先运行 swift build -c release。" >&2
-    return 1
-}
 
 echo "=== 构建 Release 版本 ==="
 swift build -c release
@@ -121,14 +87,9 @@ echo "=== 创建 App Bundle ==="
 rm -rf dist
 mkdir -p "${MACOS_DIR}"
 mkdir -p "${RESOURCES_DIR}"
-mkdir -p "${FRAMEWORKS_DIR}"
 
 # 复制可执行文件
 cp "${BUILD_DIR}/TypeBack" "${MACOS_DIR}/TypeBack"
-
-# 添加 Frameworks rpath（Sparkle 需要）
-install_name_tool -add_rpath "@executable_path/../Frameworks" "${MACOS_DIR}/TypeBack"
-echo "已添加 @executable_path/../Frameworks rpath"
 
 # 复制图标
 if [ -f "${ICON_SRC}" ]; then
@@ -137,15 +98,6 @@ if [ -f "${ICON_SRC}" ]; then
 else
     echo "⚠️  未找到图标 ${ICON_SRC}，跳过（app 将无图标）"
 fi
-
-# 复制 Sparkle.framework。TypeBack 可执行文件链接到 @rpath/Sparkle.framework；
-# 缺失 framework 时必须失败，不能产出无法启动的 app bundle。
-SPARKLE_SOURCE="$(find_sparkle_framework)"
-cp -R "${SPARKLE_SOURCE}" "${FRAMEWORKS_DIR}/"
-codesign --force --deep --sign "${SIGN_IDENTITY}" \
-    --options runtime \
-    "${FRAMEWORKS_DIR}/Sparkle.framework"
-echo "Sparkle.framework 已嵌入并签名: ${SPARKLE_SOURCE}"
 
 # 创建 Info.plist
 cat > "${CONTENTS_DIR}/Info.plist" << EOF
@@ -165,6 +117,8 @@ cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <string>6.0</string>
     <key>CFBundleName</key>
     <string>${APP_NAME}</string>
+    <key>LSUIElement</key>
+    <true/>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -175,19 +129,7 @@ cat > "${CONTENTS_DIR}/Info.plist" << EOF
     <string>Copyright © 2024 Hua Guan. All rights reserved.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
-    <key>SUEnableAutomaticChecks</key>
-    <true/>
-    <key>SUFeedURL</key>
-    <string>${SU_FEED_URL}</string>
 EOF
-
-# 添加公钥（如果有）
-if [ -n "${SU_PUBLIC_ED_KEY}" ]; then
-    cat >> "${CONTENTS_DIR}/Info.plist" << EOF
-    <key>SUPublicEDKey</key>
-    <string>${SU_PUBLIC_ED_KEY}</string>
-EOF
-fi
 
 # 关闭 plist
 cat >> "${CONTENTS_DIR}/Info.plist" << EOF

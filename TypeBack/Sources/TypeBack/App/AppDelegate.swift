@@ -1,7 +1,6 @@
 import AppKit
 import Carbon
 import SwiftUI
-import Sparkle
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -23,27 +22,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBarController: MenuBarController?
     private var settingsController: SettingsController?
 
-    // MARK: - Sparkle 更新器
-    private var updaterController: SPUStandardUpdaterController?
-
     // MARK: - 生命周期
     func applicationWillFinishLaunching(_ notification: Notification) {
-        // macOS 26 (Tahoe) 上，NSStatusItem 需在 activation policy 设置前注册。
-        // 这里不要设置 .accessory；等菜单栏项创建完成后再隐藏 Dock 图标。
+        setupMenuBar()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         logInfo("应用启动")
 
-        // 初始化 Sparkle 更新器
-        updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
-            updaterDelegate: nil,
-            userDriverDelegate: nil
-        )
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            self?.finishStartup()
+        }
+    }
 
-        setupUI()
-        NSApp.setActivationPolicy(.accessory)
+    private func finishStartup() {
+        setupRemainingUI()
         observeShortcutChanges()
         startPermissionMonitoring()
 
@@ -149,10 +142,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - UI 设置
-    private func setupUI() {
-        floatingIndicator = FloatingIndicatorController(appState: appState)
-        floatingIndicator?.show()
+    private func setupMenuBar() {
+        menuBarController = MenuBarController(
+            appState: appState,
+            onOpenSettings: { [weak self] in self?.openSettings() },
+            onQuit: { NSApp.terminate(nil) }
+        )
+    }
 
+    private func setupRemainingUI() {
         settingsController = SettingsController(
             appState: appState,
             startRecording: { [weak self] handler in
@@ -161,13 +159,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             stopRecording: { [weak self] in
                 self?.keyEventMonitor?.stopRecording()
             }
-        )
-
-        menuBarController = MenuBarController(
-            appState: appState,
-            updater: updaterController?.updater,
-            onOpenSettings: { [weak self] in self?.openSettings() },
-            onQuit: { NSApp.terminate(nil) }
         )
 
         NotificationCenter.default.addObserver(

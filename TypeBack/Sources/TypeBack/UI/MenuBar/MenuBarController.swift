@@ -1,17 +1,10 @@
 import AppKit
-import SwiftUI
-import Sparkle
 
-/// 菜单栏控制器 — SF Symbol 图标 + 精简下拉菜单
+/// 菜单栏控制器 — 原生 NSStatusItem + NSMenu
 @MainActor
 final class MenuBarController {
-    private static let statusItemAutosaveName = "com.huaguan.typeback.statusItem"
-
     private var statusItem: NSStatusItem?
-    private var fallbackPanel: NSPanel?
-    private var fallbackButton: NSButton?
     private let appState: AppState
-    private let updater: SPUUpdater?
 
     private let onOpenSettings: () -> Void
     private let onQuit: () -> Void
@@ -20,17 +13,14 @@ final class MenuBarController {
 
     init(
         appState: AppState,
-        updater: SPUUpdater?,
         onOpenSettings: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.appState = appState
-        self.updater = updater
         self.onOpenSettings = onOpenSettings
         self.onQuit = onQuit
 
         setupMenuBar()
-        setupFallbackControlIfNeeded()
         scheduleVisibilityCheck()
         startObservation()
     }
@@ -46,57 +36,20 @@ final class MenuBarController {
         }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem?.autosaveName = Self.statusItemAutosaveName
+        statusItem?.isVisible = true
 
         if let button = statusItem?.button {
+            button.isHidden = false
             button.toolTip = "TypeBack"
             button.image = nil
             button.title = "TB"
             button.font = .monospacedSystemFont(ofSize: 13, weight: .semibold)
+            logInfo("菜单栏按钮已创建: title=\(button.title), width=\(button.frame.width)")
+        } else {
+            logError("菜单栏按钮创建失败: statusItem.button=nil")
         }
 
         statusItem?.menu = makeMenu()
-    }
-
-    private func setupFallbackControlIfNeeded() {
-        guard ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 26 else { return }
-        guard fallbackPanel == nil else { return }
-        guard let screen = NSScreen.main else { return }
-
-        let size = NSSize(width: 38, height: 24)
-        let visibleFrame = screen.visibleFrame
-        let origin = NSPoint(
-            x: visibleFrame.maxX - size.width - 10,
-            y: visibleFrame.maxY - size.height + 1
-        )
-
-        let panel = NSPanel(
-            contentRect: NSRect(origin: origin, size: size),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        panel.level = .statusBar
-        panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
-        panel.isOpaque = false
-        panel.isMovable = false
-        panel.isRestorable = false
-
-        let button = NSButton(frame: NSRect(origin: .zero, size: size))
-        button.title = "TB"
-        button.font = .monospacedSystemFont(ofSize: 13, weight: .semibold)
-        button.bezelStyle = .rounded
-        button.isBordered = true
-        button.target = self
-        button.action = #selector(handleFallbackMenu)
-        button.toolTip = "TypeBack"
-
-        panel.contentView = button
-        fallbackPanel = panel
-        fallbackButton = button
-        panel.orderFrontRegardless()
     }
 
     private func scheduleVisibilityCheck() {
@@ -169,19 +122,6 @@ final class MenuBarController {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
-        // 检查更新
-        if updater != nil {
-            let updateItem = NSMenuItem(
-                title: "检查更新...",
-                action: #selector(handleCheckForUpdates),
-                keyEquivalent: ""
-            )
-            updateItem.target = self
-            menu.addItem(updateItem)
-        }
-
-        menu.addItem(NSMenuItem.separator())
-
         let quitItem = NSMenuItem(
             title: "退出 TypeBack",
             action: #selector(handleQuit),
@@ -216,16 +156,6 @@ final class MenuBarController {
     @objc private func handleOpenAccessibilitySettings() {
         PermissionsHelper.requestAccessibilityPermissionPrompt()
         PermissionsHelper.openAccessibilitySettings()
-    }
-
-    @objc private func handleFallbackMenu() {
-        guard let button = fallbackButton else { return }
-        let menu = makeMenu()
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
-    }
-
-    @objc private func handleCheckForUpdates() {
-        updater?.checkForUpdates()
     }
 
     @objc private func handleQuit() {
