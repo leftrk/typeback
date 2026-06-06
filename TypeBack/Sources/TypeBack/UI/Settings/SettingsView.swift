@@ -1,21 +1,23 @@
 import SwiftUI
 
-/// 设置窗口 — 使用系统 Form 风格，保持朴素原生。
+/// 设置窗口 — 朴素原生控件布局，避免 macOS Form 自动两列裁切。
 struct SettingsView: View {
     @Bindable var appState: AppState
     let startRecording: ShortcutRecorderView.StartRecording
     let stopRecording: ShortcutRecorderView.StopRecording
 
     var body: some View {
-        Form {
+        VStack(alignment: .leading, spacing: 18) {
             permissionSection
             autoSwitchSection
             shortcutSection
             capsLockSection
             launchAtLoginSection
+            Spacer(minLength: 0)
         }
-        .padding(20)
-        .frame(width: 440, height: 380)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 24)
+        .frame(width: 460, height: 360)
     }
 
     // MARK: - Sections
@@ -23,17 +25,13 @@ struct SettingsView: View {
     @ViewBuilder
     private var permissionSection: some View {
         if !appState.accessibilityPermissionGranted {
-            Section("权限") {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                        Text("需要辅助功能权限")
-                    }
+            SettingsGroup("权限") {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("需要辅助功能权限")
 
-                    Text("授权后 TypeBack 会自动开始监听键盘，不需要重启应用。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Spacer()
 
                     Button("打开辅助功能设置") {
                         PermissionsHelper.requestAccessibilityPermissionPrompt()
@@ -41,13 +39,14 @@ struct SettingsView: View {
                     }
                     .controlSize(.small)
                 }
-                .padding(.vertical, 2)
+
+                helpText("授权后 TypeBack 会自动开始监听键盘，不需要重启应用。")
             }
         }
     }
 
     private var autoSwitchSection: some View {
-        Section("自动回切") {
+        SettingsGroup("自动回切") {
             Toggle("启用自动回切", isOn: $appState.autoSwitchEnabled)
 
             HStack {
@@ -62,14 +61,12 @@ struct SettingsView: View {
                 .disabled(!appState.autoSwitchEnabled)
             }
 
-            Text("关闭后不再自动回切，仅靠快捷键切回英文。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            helpText("关闭后不再自动回切，仅靠快捷键切回英文。")
         }
     }
 
     private var shortcutSection: some View {
-        Section("快捷键") {
+        SettingsGroup("快捷键") {
             HStack {
                 Text("立即回英文")
                 Spacer(minLength: 12)
@@ -83,19 +80,44 @@ struct SettingsView: View {
     }
 
     private var capsLockSection: some View {
-        Section("Caps Lock") {
+        SettingsGroup("Caps Lock") {
             Toggle("仅切换输入法", isOn: $appState.disableCapsLock)
 
-            Text("打开后长按 Caps Lock 不再锁定大写，短按仍由系统切换输入法。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            helpText("打开后长按 Caps Lock 不再锁定大写，短按仍由系统切换输入法。")
         }
     }
 
     private var launchAtLoginSection: some View {
-        Section {
+        VStack(alignment: .leading, spacing: 8) {
             Toggle("开机自启动", isOn: $appState.launchAtLogin)
         }
+    }
+
+    private func helpText(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct SettingsGroup<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: () -> Content
+
+    init(_ title: String, @ViewBuilder content: @escaping () -> Content) {
+        self.title = title
+        self.content = content
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
