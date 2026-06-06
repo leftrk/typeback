@@ -151,6 +151,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupRemainingUI() {
+        floatingIndicator = FloatingIndicatorController(appState: appState)
+        floatingIndicator?.show()
+
         settingsController = SettingsController(
             appState: appState,
             startRecording: { [weak self] handler in
