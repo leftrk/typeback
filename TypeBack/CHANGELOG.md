@@ -5,6 +5,21 @@ All notable changes to TypeBack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-06-06
+
+### Changed
+- Simplify the settings window to a native SwiftUI `Form` so it follows macOS
+  system settings conventions and avoids running a second animated indicator in
+  the settings UI.
+- Keep the floating indicator effects intact while adding right-click access to
+  the settings window.
+- Document the fixed production bundle identifier `com.typeback.app` and the
+  macOS 26 Control Center cache cleanup findings.
+
+### Fixed
+- Migrate preferences from historical bundle identifiers to the fixed
+  `com.typeback.app` identity.
+
 ## [1.1.7] - 2026-06-06
 
 ### Fixed

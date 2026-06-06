@@ -5,7 +5,7 @@ import SwiftUI
 @MainActor
 final class FloatingIndicatorController {
     private var window: NSPanel?
-    private var hostingView: NSHostingView<IndicatorView>?
+    private var hostingView: IndicatorHostingView?
 
     private let windowSize = CGSize(width: 76, height: 76)
     private let appState: AppState
@@ -89,7 +89,7 @@ final class FloatingIndicatorController {
 
         let contentView = IndicatorView(appState: appState)
 
-        let hosting = NSHostingView(rootView: contentView)
+        let hosting = IndicatorHostingView(rootView: contentView)
         hosting.frame = NSRect(origin: .zero, size: windowSize)
         hosting.wantsLayer = true
         hosting.layer?.backgroundColor = .clear
@@ -119,6 +119,12 @@ final class FloatingIndicatorController {
         let x = screenFrame.origin.x + screenFrame.width * 2 / 3
         let y = screenFrame.origin.y + screenFrame.height / 2 - windowSize.height / 2
         return CGPoint(x: x, y: y)
+    }
+}
+
+private final class IndicatorHostingView: NSHostingView<IndicatorView> {
+    override func rightMouseDown(with event: NSEvent) {
+        NotificationCenter.default.post(name: .openSettings, object: nil)
     }
 }
 

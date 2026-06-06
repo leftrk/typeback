@@ -34,6 +34,40 @@ swift build -c release
 
 首次运行需在 **系统设置 → 隐私与安全性 → 辅助功能** 授权终端/TypeBack。
 
+## 发布身份与兼容性硬约束
+
+- **正式 Bundle ID 固定为 `com.typeback.app`，不要再改。**
+- `TypeBack/package.sh` 的默认 `BUNDLE_ID` 必须保持 `com.typeback.app`。
+- `Logger` 的 subsystem 使用 `com.typeback.app`，应与正式 Bundle ID 保持一致。
+- 旧身份 `com.huaguan.typeback`、`com.huaguan.typeback.app`、`com.leftrk.typeback` 只作为历史迁移/清理对象存在，不应重新作为正式身份。
+- 修改 Bundle ID 会让 macOS 把应用视为全新程序，导致辅助功能权限、菜单栏设置、LaunchServices、TCC、UserDefaults 全部重新分叉；除非明确做版本迁移，不要改。
+- 当前版本目标兼容 macOS 14~26：`Package.swift` 使用 `.macOS(.v14)`，Homebrew cask 使用 `depends_on macos: ">= :sonoma"`。
+- `Info.plist` 不写 `LSMinimumSystemVersion`；最低系统版本由 SwiftPM deployment target 和 Homebrew cask 约束。不要为了“补全 plist”重新加回该字段。
+- SwiftUI Observation、`@Observable`、`PhaseAnimator` 等都依赖 macOS 14 起步；新增 API 若高于 macOS 14，必须用 `#available`/`@available` 门控或换成 macOS 14 可用写法。
+
+## 发布与分发
+
+- 分发渠道只保留 GitHub Release DMG + Homebrew cask。
+- 不再使用 Sparkle、appcast、`generate_appcast.sh`、Sparkle XPC 或自动更新框架。
+- App 必须是菜单栏应用，不出现在 Dock：`Info.plist` 保持 `LSUIElement=true`。
+- App 入口使用传统 AppKit `@main`：`Sources/TypeBack/App/TypeBackMain.swift` 创建 `NSApplication.shared` 并挂载 `AppDelegate`。
+- 菜单栏入口保持最小原生实现：`NSStatusItem` + `NSMenu`。
+- 菜单栏图标使用 SF Symbol `character.cursor.ibeam`；`TB` 只作为 symbol 不存在时的 fallback，不作为默认 UI。
+- DMG 打包使用标准拖拽布局，不做 Finder/AppleScript 美化，避免 Finder 元数据或 provenance xattr 污染签名后的 app bundle。
+
+## macOS 26 菜单栏缓存排查结论
+
+- macOS 26 上旧 `com.huaguan.typeback` 菜单栏状态曾被系统缓存污染；最小 `NSStatusItem` 探针复用该旧 Bundle ID 也不显示，证明根因不是业务代码。
+- 使用新正式身份 `com.typeback.app` 后菜单栏可正常显示；因此该身份是长期固定身份。
+- “系统设置 → 控制中心/菜单栏”中出现多个 TypeBack 条目时，主要来源不是 TCC，而是：
+  - `~/Library/Group Containers/group.com.apple.controlcenter/Library/Preferences/group.com.apple.controlcenter.plist`
+  - key：`trackedApplications`
+  - 该值内部是嵌套 binary plist，可能残留旧 Bundle ID、`com.test.*` 探针、以及 `.build/.../TypeBack` 临时二进制路径。
+- 修复重复菜单栏条目时，不要重置整份 Control Center plist；应先备份，再只删除 TypeBack/test/临时构建相关记录，保留其它应用设置。
+- 清理后重启 `cfprefsd`、`ControlCenter`、`SystemUIServer` 和 TypeBack。
+- TCC 系统库 `/Library/Application Support/com.apple.TCC/TCC.db` 可能残留旧辅助功能行，但受 SIP/TCC 保护时即使 sudo 也可能 readonly；这些旧行不是“菜单栏”重复项的主要来源。
+- LaunchServices 可能残留旧 `/Volumes/dmg.*`、`.Trash/TypeBack.app` 或 probe 注册；macOS 26 上 `lsregister -kill` 已移除，不要依赖旧系统的全量重建命令。
+
 ## 架构
 
 ### 数据流

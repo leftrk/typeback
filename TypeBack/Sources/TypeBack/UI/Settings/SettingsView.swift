@@ -1,81 +1,58 @@
 import SwiftUI
 
-/// 设置窗口 — 卡片化布局，与指示器风格统一
+/// 设置窗口 — 使用系统 Form 风格，保持朴素原生。
 struct SettingsView: View {
     @Bindable var appState: AppState
     let startRecording: ShortcutRecorderView.StartRecording
     let stopRecording: ShortcutRecorderView.StopRecording
 
     var body: some View {
-        VStack(spacing: 14) {
-            heroSection
-            permissionCard
-            autoSwitchCard
-            shortcutCard
-            capsLockCard
-            launchAtLoginCard
+        Form {
+            permissionSection
+            autoSwitchSection
+            shortcutSection
+            capsLockSection
+            launchAtLoginSection
         }
         .padding(20)
-        .frame(width: 420)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 440, height: 380)
     }
 
-    // MARK: - Hero
-
-    private var heroSection: some View {
-        VStack(spacing: 10) {
-            // 活的迷你指示器：实时同步当前输入法状态（小尺寸，不参与水波）
-            ProgressRingIndicator(appState: appState, containerSize: 76)
-                .allowsHitTesting(false)
-
-            VStack(spacing: 2) {
-                Text("TypeBack")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                Text("输入法状态与自动回切")
-                    .font(.system(size: 11, design: .rounded))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.top, 6)
-        .padding(.bottom, 2)
-        .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - 卡片
+    // MARK: - Sections
 
     @ViewBuilder
-    private var permissionCard: some View {
+    private var permissionSection: some View {
         if !appState.accessibilityPermissionGranted {
-            SettingCard(title: "权限", caption: "授权后 TypeBack 会自动开始监听键盘，不需要重启应用。") {
-                HStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+            Section("权限") {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("需要辅助功能权限")
+                    }
 
-                    Text("需要辅助功能权限")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                    Text("授权后 TypeBack 会自动开始监听键盘，不需要重启应用。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
-                    Spacer(minLength: 12)
-
-                    Button("打开设置") {
+                    Button("打开辅助功能设置") {
                         PermissionsHelper.requestAccessibilityPermissionPrompt()
                         PermissionsHelper.openAccessibilitySettings()
                     }
                     .controlSize(.small)
                 }
+                .padding(.vertical, 2)
             }
         }
     }
 
-    private var autoSwitchCard: some View {
-        SettingCard(title: "自动回切", caption: "关闭后不再自动回切，仅靠快捷键切回英文。") {
-            settingRow("启用自动回切") {
-                Toggle("", isOn: $appState.autoSwitchEnabled)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-            }
+    private var autoSwitchSection: some View {
+        Section("自动回切") {
+            Toggle("启用自动回切", isOn: $appState.autoSwitchEnabled)
 
-            settingRow("停止输入后") {
+            HStack {
+                Text("停止输入后")
+                Spacer(minLength: 12)
                 TimeoutSecondsField(
                     seconds: Binding(
                         get: { appState.timeoutSeconds },
@@ -84,12 +61,18 @@ struct SettingsView: View {
                 )
                 .disabled(!appState.autoSwitchEnabled)
             }
+
+            Text("关闭后不再自动回切，仅靠快捷键切回英文。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
-    private var shortcutCard: some View {
-        SettingCard(title: "快捷键") {
-            settingRow("立即回英文") {
+    private var shortcutSection: some View {
+        Section("快捷键") {
+            HStack {
+                Text("立即回英文")
+                Spacer(minLength: 12)
                 ShortcutRecorderView(
                     shortcut: $appState.shortcut,
                     startRecording: startRecording,
@@ -99,92 +82,20 @@ struct SettingsView: View {
         }
     }
 
-    private var capsLockCard: some View {
-        SettingCard(title: "Caps Lock", caption: "打开后长按 Caps Lock 不再锁定大写，短按仍由系统切换输入法。") {
-            settingRow("仅切换输入法") {
-                Toggle("", isOn: $appState.disableCapsLock)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-            }
+    private var capsLockSection: some View {
+        Section("Caps Lock") {
+            Toggle("仅切换输入法", isOn: $appState.disableCapsLock)
+
+            Text("打开后长按 Caps Lock 不再锁定大写，短按仍由系统切换输入法。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
-    private var launchAtLoginCard: some View {
-        SettingCard(title: nil) {
-            settingRow("开机自启动") {
-                Toggle("", isOn: $appState.launchAtLogin)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-            }
+    private var launchAtLoginSection: some View {
+        Section {
+            Toggle("开机自启动", isOn: $appState.launchAtLogin)
         }
-    }
-
-    // MARK: - 行通用样式
-
-    private func settingRow<Trailing: View>(
-        _ label: String,
-        @ViewBuilder trailing: () -> Trailing
-    ) -> some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 13, design: .rounded))
-            Spacer(minLength: 12)
-            trailing()
-        }
-    }
-}
-
-// MARK: - 卡片容器
-
-private struct SettingCard<Content: View>: View {
-    let title: String?
-    let caption: String?
-    @ViewBuilder let content: () -> Content
-
-    init(
-        title: String?,
-        caption: String? = nil,
-        @ViewBuilder content: @escaping () -> Content
-    ) {
-        self.title = title
-        self.caption = caption
-        self.content = content
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let title {
-                Text(title)
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                    .tracking(0.8)
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                content()
-            }
-
-            if let caption {
-                Text(caption)
-                    .font(.system(size: 11, design: .rounded))
-                    .foregroundStyle(.tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.regularMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 0.5)
-        )
     }
 }
 
@@ -204,11 +115,9 @@ private struct TimeoutSecondsField: View {
             ), format: .number)
                 .textFieldStyle(.roundedBorder)
                 .multilineTextAlignment(.trailing)
-                .font(.system(size: 13, design: .rounded))
                 .frame(width: 58)
 
             Text("秒")
-                .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(.secondary)
 
             Stepper("", value: Binding(
