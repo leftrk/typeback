@@ -5,6 +5,17 @@ All notable changes to TypeBack will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-06-09
+
+### Fixed
+- Stop injecting a virtual Escape key after switching back to English. The
+  injected Escape leaked into the focused app and showed up as stray escape
+  sequences in terminals using the CSI-u / `modifyOtherKeys` keyboard protocol
+  (e.g. `;27~` in Ghostty when pressing the switch-back shortcut).
+
+### Changed
+- Simplify `switchToEnglish` by removing the candidate-box Escape cleanup path.
+
 ## [2.0.2] - 2026-06-06
 
 ### Fixed
