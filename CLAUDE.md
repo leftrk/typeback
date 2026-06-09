@@ -41,7 +41,7 @@ swift build -c release
 - `Logger` 的 subsystem 使用 `com.typeback.app`，应与正式 Bundle ID 保持一致。
 - 旧身份 `com.huaguan.typeback`、`com.huaguan.typeback.app`、`com.leftrk.typeback` 只作为历史迁移/清理对象存在，不应重新作为正式身份。
 - 修改 Bundle ID 会让 macOS 把应用视为全新程序，导致辅助功能权限、菜单栏设置、LaunchServices、TCC、UserDefaults 全部重新分叉；除非明确做版本迁移，不要改。
-- 当前版本目标兼容 macOS 14~26：`Package.swift` 使用 `.macOS(.v14)`，Homebrew cask 使用 `depends_on macos: ">= :sonoma"`。
+- 当前版本目标兼容 macOS 14~26：`Package.swift` 使用 `.macOS(.v14)`，Homebrew cask 使用 `depends_on macos: :sonoma`（bare symbol，新版 Homebrew 解析为「>= 14」最小版本；旧的字符串写法 `">= :sonoma"` 已被废弃会报 warning，不要改回）。
 - `Info.plist` 不写 `LSMinimumSystemVersion`；最低系统版本由 SwiftPM deployment target 和 Homebrew cask 约束。不要为了“补全 plist”重新加回该字段。
 - SwiftUI Observation、`@Observable`、`PhaseAnimator` 等都依赖 macOS 14 起步；新增 API 若高于 macOS 14，必须用 `#available`/`@available` 门控或换成 macOS 14 可用写法。
 
