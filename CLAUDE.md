@@ -14,11 +14,9 @@ TypeBack 是一个 macOS Menu Bar 应用。核心：
 
 ## 常用命令
 
-所有命令在 `TypeBack/` 目录下执行：
+所有命令在仓库根目录下执行：
 
 ```bash
-cd TypeBack
-
 # 构建（debug）
 swift build
 
@@ -37,7 +35,7 @@ swift build -c release
 ## 发布身份与兼容性硬约束
 
 - **正式 Bundle ID 固定为 `com.typeback.app`，不要再改。**
-- `TypeBack/package.sh` 的默认 `BUNDLE_ID` 必须保持 `com.typeback.app`。
+- `package.sh` 的默认 `BUNDLE_ID` 必须保持 `com.typeback.app`。
 - `Logger` 的 subsystem 使用 `com.typeback.app`，应与正式 Bundle ID 保持一致。
 - 旧身份 `com.huaguan.typeback`、`com.huaguan.typeback.app`、`com.leftrk.typeback` 只作为历史迁移/清理对象存在，不应重新作为正式身份。
 - 修改 Bundle ID 会让 macOS 把应用视为全新程序，导致辅助功能权限、菜单栏设置、LaunchServices、TCC、UserDefaults 全部重新分叉；除非明确做版本迁移，不要改。

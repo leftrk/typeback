@@ -12,9 +12,6 @@ concurrency:
 jobs:
   build:
     runs-on: macos-15
-    defaults:
-      run:
-        working-directory: TypeBack
 
     steps:
       - uses: actions/checkout@v4

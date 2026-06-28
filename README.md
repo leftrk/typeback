@@ -17,8 +17,6 @@ TypeBack 通过 Homebrew 发布和更新，不内置自动更新框架。
 ## 构建与运行
 
 ```bash
-cd TypeBack
-
 # 构建 + 运行
 ./run.sh
 
@@ -69,7 +67,7 @@ export ALL_PROXY=socks5://127.0.0.1:7890
 ## 项目结构
 
 ```
-TypeBack/Sources/TypeBack/
+Sources/TypeBack/
 ├── App/           # App 入口 + 生命周期
 ├── Core/          # 状态机、键盘监听、候选框检测、快捷键录制
 ├── UI/            # 浮动指示器、菜单栏、设置窗口
