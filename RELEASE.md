@@ -44,56 +44,39 @@ macOS releases.
 
 ## Full Release
 
+One command does everything — package, notarize, create the GitHub release,
+and sync the Homebrew cask to the tap:
+
 ```bash
-./package.sh --no-fancy
-gh release create "v$(cat VERSION)" dist/TypeBack.dmg
+./release.sh
 ```
 
-`package.sh` accepts these environment overrides:
+Prerequisites: bump `VERSION` first, and have a clean checkout of the
+homebrew-tap repo at `../homebrew-tap` (override with `TAP_DIR`).
+
+`release.sh` runs `package.sh --no-fancy` internally, then:
+
+1. `gh release create "v$(cat VERSION)" dist/TypeBack.dmg`
+2. Renders `Casks/typeback.rb` (the canonical cask definition lives in this
+   repo — never edit the tap copy by hand) with the new version and SHA-256
+3. Commits and pushes the cask update to homebrew-tap
+
+`package.sh`/`release.sh` accept these environment overrides:
 
 - `BUNDLE_ID`
 - `SIGN_IDENTITY`
 - `NOTARY_PROFILE`
+- `TAP_DIR`
 
 ## Homebrew Cask
 
-Update your tap with the release version and SHA-256 printed by `package.sh`.
-
-```ruby
-cask "typeback" do
-  version "1.1.5"
-  sha256 "53ef5d00053960f1b9deb52cf8131e115ebbe41a58189c05f2c34ccf22f3f390"
-
-  url "https://github.com/leftrk/typeback/releases/download/v#{version}/TypeBack.dmg"
-  name "TypeBack"
-  desc "macOS input method state indicator and automatic switch-back tool"
-  homepage "https://github.com/leftrk/typeback"
-
-  livecheck do
-    url :url
-    strategy :github_latest
-  end
-
-  depends_on macos: ">= :sonoma"
-
-  app "TypeBack.app"
-
-  zap trash: [
-    "~/Library/Preferences/com.huaguan.typeback.plist",
-    "~/Library/Application Support/com.huaguan.typeback",
-    "~/Library/Caches/com.huaguan.typeback",
-  ]
-
-  caveats <<~EOS
-    TypeBack needs Accessibility permission to monitor keyboard events:
-      System Settings -> Privacy & Security -> Accessibility -> add TypeBack
-  EOS
-end
-```
-
-Users can then install it with:
+Homebrew is the only distribution channel. Users install with:
 
 ```bash
 brew tap leftrk/tap
 brew install --cask typeback
 ```
+
+The cask file in homebrew-tap is generated from `Casks/typeback.rb` in this
+repo by `release.sh`. To change the cask body (zap list, caveats, etc.),
+edit the template here and it will be synced on the next release.
